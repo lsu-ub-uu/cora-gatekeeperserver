@@ -1,0 +1,123 @@
+<!-- ~ Copyright 2015, 2018 Uppsala University Library ~ ~ This file is part of 
+	Cora. ~ ~ Cora is free software: you can redistribute it and/or modify ~ 
+	it under the terms of the GNU General Public License as published by ~ the 
+	Free Software Foundation, either version 3 of the License, or ~ (at your 
+	option) any later version. ~ ~ Cora is distributed in the hope that it will 
+	be useful, ~ but WITHOUT ANY WARRANTY; without even the implied warranty 
+	of ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the ~ GNU General 
+	Public License for more details. ~ ~ You should have received a copy of the 
+	GNU General Public License ~ along with Cora. If not, see <http://www.gnu.org/licenses />. -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>se.uu.ub.cora</groupId>
+		<artifactId>cora-parent</artifactId>
+		<version>0.8.6</version>
+	</parent>
+
+	<artifactId>gatekeeperserver</artifactId>
+	<version>0.6-SNAPSHOT</version>
+	<packaging>war</packaging>
+	
+
+	<name>gatekeeperserver</name>
+
+	<properties>
+		<bookkeeper.version>0.14.0</bookkeeper.version>
+		<gatekeeper.version>0.6-SNAPSHOT</gatekeeper.version>
+		<json.version>0.5.7</json.version>
+<!-- 		<userpicker.version>0.6.0</userpicker.version> -->
+		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
+		<jersey.version>2.27</jersey.version>
+	</properties>
+
+	<scm>
+		<connection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeper.git</connection>
+		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeper.git</developerConnection>
+		<url>https://github.com/lsu-ub-uu/cora-gatekeeper.git</url>
+	  <tag>HEAD</tag>
+  </scm>
+
+
+	<dependencies>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>bookkeeper</artifactId>
+			<version>${bookkeeper.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>gatekeeper</artifactId>
+			<version>${gatekeeper.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>json</artifactId>
+			<version>${json.version}</version>
+			<scope>compile</scope>
+		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>se.uu.ub.cora</groupId> -->
+<!-- 			<artifactId>userpicker</artifactId> -->
+<!-- 			<version>${userpicker.version}</version> -->
+<!-- 			<scope>provided</scope> -->
+<!-- 		</dependency> -->
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>${javax.ws.rs.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>${jersey.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-common</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.inject</groupId>
+			<artifactId>jersey-hk2</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- The JAXB APIs are considered to be Java EE APIs, and therefore are 
+			no longer contained on the default class path in Java SE 9. In Java 11 they 
+			are completely removed from the JDK. -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.activation</groupId>
+			<artifactId>activation</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.activation</groupId>
+			<artifactId>javax.activation</artifactId>
+			<version>1.2.0</version>
+		</dependency> 
+	</dependencies>
+	<build>
+		<finalName>gatekeeperserver</finalName>
+	</build>
+</project>
