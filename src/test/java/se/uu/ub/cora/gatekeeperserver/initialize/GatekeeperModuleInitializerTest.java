@@ -27,33 +27,72 @@ import java.util.ServiceLoader;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-import se.uu.ub.cora.gatekeeper.user.UserStorage;
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperInitializationException;
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperModuleInitializer;
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperModuleStarter;
+import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 
 public class GatekeeperModuleInitializerTest {
-	@Test
-	public void testInitUsesGatekeeperModuleStarter() throws Exception {
-		ServletContext source = new ServletContextSpy();
+	private ServletContext source;
+	private ServletContextEvent context;
+	private GatekeeperModuleInitializer initializer;
+
+	@BeforeMethod
+	public void beforeMethod() {
+		source = new ServletContextSpy();
 		source.setInitParameter("initParam1", "initValue1");
 		source.setInitParameter("initParam2", "initValue2");
-		ServletContextEvent context = new ServletContextEvent(source);
-		GatekeeperModuleInitializer initializer = new GatekeeperModuleInitializer();
-
-		makeSureErrorIsThrownAsNoImplementationsExistInThisModule(context, initializer);
-		GatekeeperModuleStarter starter = initializer.getStarter();
-		assertStarterIsGatekeeperModuleStarter(starter);
-		assertInitParametersArePassedOnToStarter(starter);
-		assertUserPickerProviderImplementationsAreCollectedUsingServiceLoader(starter);
-		assertUserStorageImplementationsAreCollectedUsingServiceLoader(starter);
+		context = new ServletContextEvent(source);
+		initializer = new GatekeeperModuleInitializer();
 	}
 
-	private void makeSureErrorIsThrownAsNoImplementationsExistInThisModule(
-			ServletContextEvent context, GatekeeperModuleInitializer initializer) {
+	@Test
+	public void testNonExceptionThrowingStartup() throws Exception {
+		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
+		assertTrue(starter.startWasCalled);
+	}
+
+	private GatekeeperModuleStarterSpy startGatekeeperModuleInitializerWithStarterSpy() {
+		GatekeeperModuleStarterSpy starter = new GatekeeperModuleStarterSpy();
+		initializer.setStarter(starter);
+		initializer.contextInitialized(context);
+		return starter;
+	}
+
+	@Test
+	private void testInitParametersArePassedOnToStarter() {
+		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
+		Map<String, String> initInfo = starter.initInfo;
+		assertEquals(initInfo.size(), 2);
+		assertEquals(initInfo.get("initParam1"), "initValue1");
+		assertEquals(initInfo.get("initParam2"), "initValue2");
+	}
+
+	@Test
+	private void testUserPickerProviderImplementationsArePassedOnToStarter() {
+		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
+
+		Iterable<UserPickerProvider> iterable = starter.userPickerProviderImplementations;
+		assertTrue(iterable instanceof ServiceLoader);
+	}
+
+	@Test
+	private void testUserStorageProviderImplementationsArePassedOnToStarter() {
+		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
+
+		Iterable<UserStorageProvider> iterable = starter.userStorageProviderImplementations;
+		assertTrue(iterable instanceof ServiceLoader);
+	}
+
+	@Test
+	public void testInitUsesDefaultGatekeeperModuleStarter() throws Exception {
+		makeSureErrorIsThrownAsNoImplementationsExistInThisModule();
+		GatekeeperModuleStarterImp starter = (GatekeeperModuleStarterImp) initializer.getStarter();
+		assertStarterIsGatekeeperModuleStarter(starter);
+	}
+
+	private void makeSureErrorIsThrownAsNoImplementationsExistInThisModule() {
 		Exception caughtException = null;
 		try {
 			initializer.contextInitialized(context);
@@ -66,26 +105,7 @@ public class GatekeeperModuleInitializerTest {
 	}
 
 	private void assertStarterIsGatekeeperModuleStarter(GatekeeperModuleStarter starter) {
-		assertTrue(starter instanceof GatekeeperModuleStarter);
-	}
-
-	private void assertInitParametersArePassedOnToStarter(GatekeeperModuleStarter starter) {
-		Map<String, String> initInfo = starter.getInitInfo();
-		assertEquals(initInfo.size(), 2);
-		assertEquals(initInfo.get("initParam1"), "initValue1");
-		assertEquals(initInfo.get("initParam2"), "initValue2");
-	}
-
-	private void assertUserPickerProviderImplementationsAreCollectedUsingServiceLoader(
-			GatekeeperModuleStarter starter) {
-		Iterable<UserPickerProvider> iterable = starter.getUserPickerProviderImplementations();
-		assertTrue(iterable instanceof ServiceLoader);
-	}
-
-	private void assertUserStorageImplementationsAreCollectedUsingServiceLoader(
-			GatekeeperModuleStarter starter) {
-		Iterable<UserStorage> iterable = starter.getUserStorageImplementations();
-		assertTrue(iterable instanceof ServiceLoader);
+		assertTrue(starter instanceof GatekeeperModuleStarterImp);
 	}
 
 }

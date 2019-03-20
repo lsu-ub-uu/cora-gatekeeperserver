@@ -8,5 +8,5 @@ module se.uu.ub.cora.gatekeeperserver {
 	requires se.uu.ub.cora.gatekeeper;
 
 	uses se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-	uses se.uu.ub.cora.gatekeeper.user.UserStorage;
+	uses se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 }

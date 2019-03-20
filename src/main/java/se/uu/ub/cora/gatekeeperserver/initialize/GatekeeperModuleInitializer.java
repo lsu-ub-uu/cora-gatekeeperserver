@@ -28,18 +28,15 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-import se.uu.ub.cora.gatekeeper.user.UserStorage;
+import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 
 @WebListener
 public class GatekeeperModuleInitializer implements ServletContextListener {
 	private ServletContext servletContext;
 	private HashMap<String, String> initInfo = new HashMap<>();
-	// TODO: make call to a new class InitializerPartTwo
-	// that takes the collected initInfo and an Iterable with the found services
-	// let this initializerPartTwo set as this currently does
-	private GatekeeperModuleStarter starter;
+	private GatekeeperModuleStarter starter = new GatekeeperModuleStarterImp();
 	private Iterable<UserPickerProvider> userPickerProviderImplementations;
-	private ServiceLoader<UserStorage> userStorageImplementations;
+	private ServiceLoader<UserStorageProvider> userStorageProviderImplementations;
 
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
@@ -51,8 +48,7 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 		collectInitInformation();
 		collectUserPickerProviderImplementations();
 		collectUserStorageImplementations();
-		createGatekeeperStarter();
-		starter.start();
+		startGatekeeperStarter();
 	}
 
 	private void collectInitInformation() {
@@ -68,16 +64,30 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	}
 
 	private void collectUserStorageImplementations() {
-		userStorageImplementations = ServiceLoader.load(UserStorage.class);
+		userStorageProviderImplementations = ServiceLoader.load(UserStorageProvider.class);
 	}
 
-	private void createGatekeeperStarter() {
-		starter = GatekeeperModuleStarter.usingInitInfoAndUserPickerProvidersAndUserStorages(
-				initInfo, userPickerProviderImplementations, userStorageImplementations);
+	private void startGatekeeperStarter() {
+		// starter = GatekeeperModuleStarterImp
+		// .usingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
+		// userPickerProviderImplementations, userStorageProviderImplementations);
+		starter.startUsingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
+				userPickerProviderImplementations, userStorageProviderImplementations);
 	}
 
 	GatekeeperModuleStarter getStarter() {
 		// needed for test
 		return starter;
+	}
+
+	void setStarter(GatekeeperModuleStarter starter) {
+		this.starter = starter;
+
+	}
+
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		// TODO Auto-generated method stub
+		ServletContextListener.super.contextDestroyed(sce);
 	}
 }

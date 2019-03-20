@@ -33,17 +33,16 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
+import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.UserPickerProviderSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperInitializationException;
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperModuleStarter;
 
 public class GatekeeperModuleStarterTest {
 
 	private Map<String, String> initInfo;
 	private List<UserPickerProvider> userPickerProviders;
-	private List<UserStorage> userStorages;
+	private List<UserStorageProvider> userStorageProviders;
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -51,9 +50,38 @@ public class GatekeeperModuleStarterTest {
 		initInfo.put("guestUserId", "someGuestUserId");
 		userPickerProviders = new ArrayList<>();
 		userPickerProviders.add(new UserPickerProviderSpy(null));
-		userStorages = new ArrayList<>();
-		userStorages.add(new UserStorageSpy());
+		userStorageProviders = new ArrayList<>();
+		userStorageProviders.add(new UserStorageProviderSpy());
 
+	}
+
+	private void startGatekeeperModuleStarter() {
+		GatekeeperModuleStarter starter = new GatekeeperModuleStarterImp();
+		starter.startUsingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
+				userPickerProviders, userStorageProviders);
+	}
+
+	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
+			+ "No implementations found for UserStorageProvider")
+	public void testStartModuleThrowsErrorIfNoUserStorageImplementations() throws Exception {
+		userStorageProviders.clear();
+		startGatekeeperModuleStarter();
+	}
+
+	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
+			+ "More than one implementation found for UserStorageProvider")
+	public void testStartModuleThrowsErrorIfMoreThanOneUserStorageImplementations()
+			throws Exception {
+		userStorageProviders.add(new UserStorageProviderSpy());
+		startGatekeeperModuleStarter();
+	}
+
+	@Test()
+	public void testStartModuleInitInfoSentToUserStorageProviderImplementation() throws Exception {
+		UserStorageProviderSpy userStorageProviderSpy = (UserStorageProviderSpy) userStorageProviders
+				.get(0);
+		startGatekeeperModuleStarter();
+		assertSame(userStorageProviderSpy.initInfo, initInfo);
 	}
 
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
@@ -61,13 +89,6 @@ public class GatekeeperModuleStarterTest {
 	public void testStartModuleThrowsErrorIfNoUserPickerProviderImplementations() throws Exception {
 		userPickerProviders.clear();
 		startGatekeeperModuleStarter();
-	}
-
-	private void startGatekeeperModuleStarter() {
-		GatekeeperModuleStarter starter = GatekeeperModuleStarter
-				.usingInitInfoAndUserPickerProvidersAndUserStorages(initInfo, userPickerProviders,
-						userStorages);
-		starter.start();
 	}
 
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
@@ -86,36 +107,22 @@ public class GatekeeperModuleStarterTest {
 	}
 
 	@Test()
-	public void testStartModuleGuestUserIdSentToImplementation() throws Exception {
+	public void testStartModuleGuestUserIdSentToUserPickerImplementation() throws Exception {
 		UserPickerProviderSpy userPickerProviderSpy = (UserPickerProviderSpy) userPickerProviders
 				.get(0);
 		startGatekeeperModuleStarter();
 		assertEquals(userPickerProviderSpy.guestUserId(), "someGuestUserId");
 	}
 
-	// **
-	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
-			+ "No implementations found for UserStorage")
-	public void testStartModuleThrowsErrorIfNoUserStorageImplementations() throws Exception {
-		userStorages.clear();
-		startGatekeeperModuleStarter();
-	}
-
-	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
-			+ "More than one implementation found for UserStorage")
-	public void testStartModuleThrowsErrorIfMoreThanOneUserStorageImplementations()
-			throws Exception {
-		userStorages.add(new UserStorageSpy());
-		startGatekeeperModuleStarter();
-	}
-
 	@Test()
-	public void testStartModuleUserStorageSentToImplementation() throws Exception {
+	public void testStartModuleUserStorageSentToUserPickerImplementation() throws Exception {
 		UserPickerProviderSpy userPickerProviderSpy = (UserPickerProviderSpy) userPickerProviders
 				.get(0);
-		UserStorageSpy userStorageSpy = (UserStorageSpy) userStorages.get(0);
+		UserStorageProviderSpy userStorageProviderSpy = (UserStorageProviderSpy) userStorageProviders
+				.get(0);
+		UserStorage userStorage = userStorageProviderSpy.getUserStorage();
 		startGatekeeperModuleStarter();
-		assertEquals(userPickerProviderSpy.getUserStorage(), userStorageSpy);
+		assertEquals(userPickerProviderSpy.getUserStorage(), userStorage);
 	}
 
 	@Test
