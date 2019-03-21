@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
+import se.uu.ub.cora.gatekeeper.user.UserPicker;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
@@ -48,7 +49,8 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private User returnGuestUser() {
-		return userPickerProvider.getUserPicker().pickGuest();
+		UserPicker userPicker = userPickerProvider.getUserPicker();
+		return userPicker.pickGuest();
 	}
 
 	private User tryToGetAuthenticatedUser(String authToken) {
