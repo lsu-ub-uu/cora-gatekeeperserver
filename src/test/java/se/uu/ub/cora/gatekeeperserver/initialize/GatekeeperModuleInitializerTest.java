@@ -61,7 +61,7 @@ public class GatekeeperModuleInitializerTest {
 	}
 
 	@Test
-	private void testInitParametersArePassedOnToStarter() {
+	public void testInitParametersArePassedOnToStarter() {
 		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
 		Map<String, String> initInfo = starter.initInfo;
 		assertEquals(initInfo.size(), 2);
@@ -70,7 +70,7 @@ public class GatekeeperModuleInitializerTest {
 	}
 
 	@Test
-	private void testUserPickerProviderImplementationsArePassedOnToStarter() {
+	public void testUserPickerProviderImplementationsArePassedOnToStarter() {
 		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
 
 		Iterable<UserPickerProvider> iterable = starter.userPickerProviderImplementations;
@@ -78,7 +78,7 @@ public class GatekeeperModuleInitializerTest {
 	}
 
 	@Test
-	private void testUserStorageProviderImplementationsArePassedOnToStarter() {
+	public void testUserStorageProviderImplementationsArePassedOnToStarter() {
 		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
 
 		Iterable<UserStorageProvider> iterable = starter.userStorageProviderImplementations;
