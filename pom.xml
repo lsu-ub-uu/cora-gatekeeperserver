@@ -33,9 +33,9 @@
 	</properties>
 
 	<scm>
-		<connection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeper.git</connection>
-		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeper.git</developerConnection>
-		<url>https://github.com/lsu-ub-uu/cora-gatekeeper.git</url>
+		<connection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</connection>
+		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</developerConnection>
+		<url>https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</url>
 	  <tag>HEAD</tag>
   </scm>
 
