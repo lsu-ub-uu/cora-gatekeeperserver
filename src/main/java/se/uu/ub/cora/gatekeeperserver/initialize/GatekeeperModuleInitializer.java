@@ -68,9 +68,6 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	}
 
 	private void startGatekeeperStarter() {
-		// starter = GatekeeperModuleStarterImp
-		// .usingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
-		// userPickerProviderImplementations, userStorageProviderImplementations);
 		starter.startUsingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
 				userPickerProviderImplementations, userStorageProviderImplementations);
 	}
@@ -85,9 +82,4 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 
 	}
 
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-		// TODO Auto-generated method stub
-		ServletContextListener.super.contextDestroyed(sce);
-	}
 }
