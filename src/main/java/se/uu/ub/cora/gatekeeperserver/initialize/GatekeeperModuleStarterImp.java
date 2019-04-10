@@ -27,11 +27,14 @@ import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorImp;
+import se.uu.ub.cora.logger.Logger;
+import se.uu.ub.cora.logger.LoggerProvider;
 
 public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 	private Map<String, String> initInfo;
 	private Iterable<UserPickerProvider> userPickerProviders;
 	private Iterable<UserStorageProvider> userStorageProviders;
+	private Logger log = LoggerProvider.getLoggerForClass(GatekeeperModuleStarterImp.class);
 
 	@Override
 	public void startUsingInitInfoAndUserPickerProvidersAndUserStorageProviders(
@@ -47,7 +50,6 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 	public void start() {
 		UserPickerProvider userPickerProvider = getImplementationThrowErrorIfNoneOrMoreThanOne(
 				userPickerProviders, "UserPickerProvider");
-		String guestUserId = tryToGetInitParameter("guestUserId");
 
 		UserStorageProvider userStorageProvider = getImplementationThrowErrorIfNoneOrMoreThanOne(
 				userStorageProviders, "UserStorageProvider");
@@ -55,6 +57,7 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 		userStorageProvider.startUsingInitInfo(initInfo);
 		UserStorage userStorage = userStorageProvider.getUserStorage();
 
+		String guestUserId = tryToGetInitParameter("guestUserId");
 		userPickerProvider.startUsingUserStorageAndGuestUserId(userStorage, guestUserId);
 
 		GatekeeperLocator locator = new GatekeeperLocatorImp();
@@ -64,40 +67,48 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 
 	private String tryToGetInitParameter(String parameterName) {
 		throwErrorIfKeyIsMissingFromInitInfo(parameterName);
-		return initInfo.get(parameterName);
+		String parameter = initInfo.get(parameterName);
+		log.logInfoUsingMessage("Found " + parameter + " as " + parameterName);
+		return parameter;
 	}
 
 	private void throwErrorIfKeyIsMissingFromInitInfo(String key) {
 		if (!initInfo.containsKey(key)) {
-			throw new GatekeeperInitializationException("InitInfo must contain " + key);
+			logAndThrowInitializationError("InitInfo must contain " + key);
 		}
 	}
 
 	private <T extends Object> T getImplementationThrowErrorIfNoneOrMoreThanOne(
-			Iterable<T> implementations, String implementationClassName) {
+			Iterable<T> implementations, String interfaceClassName) {
 		T implementation = null;
 		int noOfImplementationsFound = 0;
 		for (T currentImplementation : implementations) {
 			noOfImplementationsFound++;
 			implementation = currentImplementation;
 		}
-		throwErrorIfNone(noOfImplementationsFound, implementationClassName);
-		throwErrorIfMoreThanOne(noOfImplementationsFound, implementationClassName);
+		throwErrorIfNone(noOfImplementationsFound, interfaceClassName);
+		throwErrorIfMoreThanOne(noOfImplementationsFound, interfaceClassName);
+		log.logInfoUsingMessage("Found " + implementation.getClass().getName() + " as "
+				+ interfaceClassName + " implementation.");
 		return implementation;
 	}
 
-	private void throwErrorIfNone(int noOfImplementationsFound, String implementationClassName) {
+	private void throwErrorIfNone(int noOfImplementationsFound, String interfaceClassName) {
 		if (noOfImplementationsFound == 0) {
-			throw new GatekeeperInitializationException(
-					"No implementations found for " + implementationClassName);
+			String errorMessage = "No implementations found for " + interfaceClassName;
+			logAndThrowInitializationError(errorMessage);
 		}
 	}
 
-	private void throwErrorIfMoreThanOne(int noOfImplementationsFound,
-			String implementationClassName) {
+	private void logAndThrowInitializationError(String errorMessage) {
+		log.logFatalUsingMessage(errorMessage);
+		throw new GatekeeperInitializationException(errorMessage);
+	}
+
+	private void throwErrorIfMoreThanOne(int noOfImplementationsFound, String interfaceClassName) {
 		if (noOfImplementationsFound > 1) {
-			throw new GatekeeperInitializationException(
-					"More than one implementation found for " + implementationClassName);
+			String errorMessage = "More than one implementation found for " + interfaceClassName;
+			logAndThrowInitializationError(errorMessage);
 		}
 	}
 }

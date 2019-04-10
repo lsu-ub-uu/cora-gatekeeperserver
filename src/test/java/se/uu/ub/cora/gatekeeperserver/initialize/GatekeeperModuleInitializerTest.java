@@ -32,14 +32,20 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
+import se.uu.ub.cora.gatekeeperserver.log.LoggerFactorySpy;
+import se.uu.ub.cora.logger.LoggerProvider;
 
 public class GatekeeperModuleInitializerTest {
 	private ServletContext source;
 	private ServletContextEvent context;
 	private GatekeeperModuleInitializer initializer;
+	private LoggerFactorySpy loggerFactorySpy;
+	private String testedClassName = "GatekeeperModuleInitializer";
 
 	@BeforeMethod
 	public void beforeMethod() {
+		loggerFactorySpy = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(loggerFactorySpy);
 		source = new ServletContextSpy();
 		source.setInitParameter("initParam1", "initValue1");
 		source.setInitParameter("initParam2", "initValue2");
@@ -51,6 +57,15 @@ public class GatekeeperModuleInitializerTest {
 	public void testNonExceptionThrowingStartup() throws Exception {
 		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
 		assertTrue(starter.startWasCalled);
+	}
+
+	@Test
+	public void testLogMessagesOnStartup() throws Exception {
+		startGatekeeperModuleInitializerWithStarterSpy();
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"GatekeeperModuleInitializer starting...");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
+				"GatekeeperModuleInitializer started");
 	}
 
 	private GatekeeperModuleStarterSpy startGatekeeperModuleInitializerWithStarterSpy() {

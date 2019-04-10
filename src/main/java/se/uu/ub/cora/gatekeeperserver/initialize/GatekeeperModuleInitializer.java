@@ -29,6 +29,8 @@ import javax.servlet.annotation.WebListener;
 
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
+import se.uu.ub.cora.logger.Logger;
+import se.uu.ub.cora.logger.LoggerProvider;
 
 @WebListener
 public class GatekeeperModuleInitializer implements ServletContextListener {
@@ -37,6 +39,7 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	private GatekeeperModuleStarter starter = new GatekeeperModuleStarterImp();
 	private Iterable<UserPickerProvider> userPickerProviderImplementations;
 	private ServiceLoader<UserStorageProvider> userStorageProviderImplementations;
+	private Logger log = LoggerProvider.getLoggerForClass(GatekeeperModuleInitializer.class);
 
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
@@ -45,10 +48,13 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	}
 
 	private void initializeGatekeeper() {
+		String simpleName = GatekeeperModuleInitializer.class.getSimpleName();
+		log.logInfoUsingMessage(simpleName + " starting...");
 		collectInitInformation();
 		collectUserPickerProviderImplementations();
 		collectUserStorageImplementations();
 		startGatekeeperStarter();
+		log.logInfoUsingMessage(simpleName + " started");
 	}
 
 	private void collectInitInformation() {

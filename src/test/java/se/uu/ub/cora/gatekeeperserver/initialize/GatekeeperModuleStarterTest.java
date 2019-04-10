@@ -35,17 +35,22 @@ import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
-import se.uu.ub.cora.gatekeeperserver.UserPickerProviderSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
+import se.uu.ub.cora.gatekeeperserver.log.LoggerFactorySpy;
+import se.uu.ub.cora.logger.LoggerProvider;
 
 public class GatekeeperModuleStarterTest {
 
 	private Map<String, String> initInfo;
 	private List<UserPickerProvider> userPickerProviders;
 	private List<UserStorageProvider> userStorageProviders;
+	private LoggerFactorySpy loggerFactorySpy;
+	private String testedClassName = "GatekeeperModuleStarterImp";
 
 	@BeforeMethod
 	public void beforeMethod() {
+		loggerFactorySpy = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(loggerFactorySpy);
 		initInfo = new HashMap<>();
 		initInfo.put("guestUserId", "someGuestUserId");
 		userPickerProviders = new ArrayList<>();
@@ -76,7 +81,7 @@ public class GatekeeperModuleStarterTest {
 		startGatekeeperModuleStarter();
 	}
 
-	@Test()
+	@Test
 	public void testStartModuleInitInfoSentToUserStorageProviderImplementation() throws Exception {
 		UserStorageProviderSpy userStorageProviderSpy = (UserStorageProviderSpy) userStorageProviders
 				.get(0);
@@ -84,11 +89,40 @@ public class GatekeeperModuleStarterTest {
 		assertSame(userStorageProviderSpy.initInfo, initInfo);
 	}
 
+	@Test
+	public void testStartModuleLogsImplementationDetails() throws Exception {
+		startGatekeeperModuleStarter();
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as UserPickerProvider implementation.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as UserStorageProvider implementation.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
+				"Found someGuestUserId as guestUserId");
+	}
+
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
 			+ "No implementations found for UserPickerProvider")
 	public void testStartModuleThrowsErrorIfNoUserPickerProviderImplementations() throws Exception {
 		userPickerProviders.clear();
 		startGatekeeperModuleStarter();
+	}
+
+	@Test
+	public void testStartModuleLogsErrorIfNoUserPickerProviderImplementations() throws Exception {
+		userPickerProviders.clear();
+		startGatekeeperMakeSureAnExceptionIsThrown();
+		assertEquals(loggerFactorySpy.getFatalLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"No implementations found for UserPickerProvider");
+	}
+
+	private void startGatekeeperMakeSureAnExceptionIsThrown() {
+		Exception caughtException = null;
+		try {
+			startGatekeeperModuleStarter();
+		} catch (Exception e) {
+			caughtException = e;
+		}
+		assertNotNull(caughtException);
 	}
 
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
@@ -99,11 +133,29 @@ public class GatekeeperModuleStarterTest {
 		startGatekeeperModuleStarter();
 	}
 
+	@Test
+	public void testStartModuleLogsErrorIfMoreThanOneUserPickerProviderImplementations()
+			throws Exception {
+		userPickerProviders.add(new UserPickerProviderSpy(null));
+		startGatekeeperMakeSureAnExceptionIsThrown();
+		String testedClassName = "GatekeeperModuleStarterImp";
+		assertEquals(loggerFactorySpy.getFatalLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"More than one implementation found for UserPickerProvider");
+	}
+
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
 			+ "InitInfo must contain guestUserId")
 	public void testStartModuleThrowsErrorIfMissingGuestUserId() throws Exception {
 		initInfo.clear();
 		startGatekeeperModuleStarter();
+	}
+
+	@Test
+	public void testStartModuleLogsErrorIfMissingGuestUserId() throws Exception {
+		initInfo.clear();
+		startGatekeeperMakeSureAnExceptionIsThrown();
+		assertEquals(loggerFactorySpy.getFatalLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"InitInfo must contain guestUserId");
 	}
 
 	@Test()

@@ -33,6 +33,7 @@ import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
 import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
+import se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public class GatekeeperTest {
