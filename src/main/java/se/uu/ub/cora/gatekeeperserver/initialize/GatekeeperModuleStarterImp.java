@@ -74,7 +74,9 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 
 	private void throwErrorIfKeyIsMissingFromInitInfo(String key) {
 		if (!initInfo.containsKey(key)) {
-			logAndThrowInitializationError("InitInfo must contain " + key);
+			String errorMessage = "InitInfo must contain " + key;
+			log.logFatalUsingMessage(errorMessage);
+			throw new GatekeeperInitializationException(errorMessage);
 		}
 	}
 
@@ -96,19 +98,16 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 	private void throwErrorIfNone(int noOfImplementationsFound, String interfaceClassName) {
 		if (noOfImplementationsFound == 0) {
 			String errorMessage = "No implementations found for " + interfaceClassName;
-			logAndThrowInitializationError(errorMessage);
+			log.logFatalUsingMessage(errorMessage);
+			throw new GatekeeperInitializationException(errorMessage);
 		}
-	}
-
-	private void logAndThrowInitializationError(String errorMessage) {
-		log.logFatalUsingMessage(errorMessage);
-		throw new GatekeeperInitializationException(errorMessage);
 	}
 
 	private void throwErrorIfMoreThanOne(int noOfImplementationsFound, String interfaceClassName) {
 		if (noOfImplementationsFound > 1) {
 			String errorMessage = "More than one implementation found for " + interfaceClassName;
-			logAndThrowInitializationError(errorMessage);
+			log.logFatalUsingMessage(errorMessage);
+			throw new GatekeeperInitializationException(errorMessage);
 		}
 	}
 }
