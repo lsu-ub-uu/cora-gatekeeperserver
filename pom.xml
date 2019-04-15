@@ -25,7 +25,7 @@
 	<name>gatekeeperserver</name>
 
 	<properties>
-		<logger.version>1.0-SNAPSHOT</logger.version>
+		<logger.version>1.0.0</logger.version>
 		<bookkeeper.version>1.0.0</bookkeeper.version>
 		<gatekeeper.version>1.0.0</gatekeeper.version>
 		<json.version>1.0.0</json.version>
