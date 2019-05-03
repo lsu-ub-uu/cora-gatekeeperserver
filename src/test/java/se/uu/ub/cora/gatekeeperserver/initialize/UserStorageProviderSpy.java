@@ -38,4 +38,9 @@ public class UserStorageProviderSpy implements UserStorageProvider {
 		this.initInfo = initInfo;
 	}
 
+	@Override
+	public int getPreferenceLevel() {
+		return 0;
+	}
+
 }

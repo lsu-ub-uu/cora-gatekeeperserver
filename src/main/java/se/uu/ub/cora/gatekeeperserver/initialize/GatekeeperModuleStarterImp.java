@@ -20,6 +20,7 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.Map;
 
+import se.uu.ub.cora.gatekeeper.user.PreferenceLevel;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
@@ -31,6 +32,8 @@ import se.uu.ub.cora.logger.Logger;
 import se.uu.ub.cora.logger.LoggerProvider;
 
 public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
+	private static final String IMPLEMENTATION = " implementation";
+	private static final String FOUND = "Found ";
 	private Map<String, String> initInfo;
 	private Iterable<UserPickerProvider> userPickerProviders;
 	private Iterable<UserStorageProvider> userStorageProviders;
@@ -48,10 +51,10 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 	}
 
 	public void start() {
-		UserPickerProvider userPickerProvider = getImplementationThrowErrorIfNoneOrMoreThanOne(
+		UserPickerProvider userPickerProvider = getImplementationBasedOnPreferenceLevelThrowErrorIfNone(
 				userPickerProviders, "UserPickerProvider");
 
-		UserStorageProvider userStorageProvider = getImplementationThrowErrorIfNoneOrMoreThanOne(
+		UserStorageProvider userStorageProvider = getImplementationBasedOnPreferenceLevelThrowErrorIfNone(
 				userStorageProviders, "UserStorageProvider");
 
 		userStorageProvider.startUsingInitInfo(initInfo);
@@ -68,7 +71,7 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 	private String tryToGetInitParameter(String parameterName) {
 		throwErrorIfKeyIsMissingFromInitInfo(parameterName);
 		String parameter = initInfo.get(parameterName);
-		log.logInfoUsingMessage("Found " + parameter + " as " + parameterName);
+		log.logInfoUsingMessage(FOUND + parameter + " as " + parameterName);
 		return parameter;
 	}
 
@@ -80,34 +83,41 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 		}
 	}
 
-	private <T extends Object> T getImplementationThrowErrorIfNoneOrMoreThanOne(
+	private <T extends PreferenceLevel> T getImplementationBasedOnPreferenceLevelThrowErrorIfNone(
 			Iterable<T> implementations, String interfaceClassName) {
-		T implementation = null;
-		int noOfImplementationsFound = 0;
-		for (T currentImplementation : implementations) {
-			noOfImplementationsFound++;
-			implementation = currentImplementation;
-		}
-		throwErrorIfNone(noOfImplementationsFound, interfaceClassName);
-		throwErrorIfMoreThanOne(noOfImplementationsFound, interfaceClassName);
-		log.logInfoUsingMessage("Found " + implementation.getClass().getName() + " as "
+		T implementation = findAndLogPreferedImplementation(implementations, interfaceClassName);
+		throwErrorIfNoImplementationFound(interfaceClassName, implementation);
+		log.logInfoUsingMessage("Using " + implementation.getClass().getName() + " as "
 				+ interfaceClassName + " implementation.");
 		return implementation;
 	}
 
-	private void throwErrorIfNone(int noOfImplementationsFound, String interfaceClassName) {
-		if (noOfImplementationsFound == 0) {
-			String errorMessage = "No implementations found for " + interfaceClassName;
-			log.logFatalUsingMessage(errorMessage);
-			throw new GatekeeperInitializationException(errorMessage);
+	private <T extends PreferenceLevel> void throwErrorIfNoImplementationFound(
+			String interfaceClassName, T implementation) {
+		if (null == implementation) {
+			throwAndLogError(interfaceClassName);
 		}
 	}
 
-	private void throwErrorIfMoreThanOne(int noOfImplementationsFound, String interfaceClassName) {
-		if (noOfImplementationsFound > 1) {
-			String errorMessage = "More than one implementation found for " + interfaceClassName;
-			log.logFatalUsingMessage(errorMessage);
-			throw new GatekeeperInitializationException(errorMessage);
+	private <T extends PreferenceLevel> T findAndLogPreferedImplementation(
+			Iterable<T> implementations, String interfaceClassName) {
+		T implementation = null;
+		int preferenceLevel = -99999;
+		for (T currentImplementation : implementations) {
+			if (preferenceLevel < currentImplementation.getPreferenceLevel()) {
+				preferenceLevel = currentImplementation.getPreferenceLevel();
+				implementation = currentImplementation;
+			}
+			log.logInfoUsingMessage(FOUND + currentImplementation.getClass().getName() + " as "
+					+ interfaceClassName + " implementation with preference level "
+					+ currentImplementation.getPreferenceLevel() + ".");
 		}
+		return implementation;
+	}
+
+	private void throwAndLogError(String interfaceClassName) {
+		String errorMessage = "No implementations found for " + interfaceClassName;
+		log.logFatalUsingMessage(errorMessage);
+		throw new GatekeeperInitializationException(errorMessage);
 	}
 }

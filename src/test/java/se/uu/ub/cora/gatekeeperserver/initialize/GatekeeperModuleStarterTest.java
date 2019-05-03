@@ -73,12 +73,34 @@ public class GatekeeperModuleStarterTest {
 		startGatekeeperModuleStarter();
 	}
 
-	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
-			+ "More than one implementation found for UserStorageProvider")
-	public void testStartModuleThrowsErrorIfMoreThanOneUserStorageImplementations()
+	@Test
+	public void testStartModuleLogsErrorIfNoUserStorageProviderImplementations() throws Exception {
+		userStorageProviders.clear();
+		startGatekeeperMakeSureAnExceptionIsThrown();
+		assertEquals(loggerFactorySpy.getFatalLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"No implementations found for UserStorageProvider");
+	}
+
+	@Test
+	public void testStartModuleLogsErrorIfMoreThanOneUserStorageProviderImplementations()
 			throws Exception {
+		userStorageProviders.add(new UserStorageProviderSpy2());
 		userStorageProviders.add(new UserStorageProviderSpy());
 		startGatekeeperModuleStarter();
+		String testedClassName = "GatekeeperModuleStarterImp";
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
+						+ "UserStorageProvider implementation with preference level 0.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy2 as "
+						+ "UserStorageProvider implementation with preference level 2.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 4),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
+						+ "UserStorageProvider implementation with preference level 0.");
+
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 5),
+				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy2 as "
+						+ "UserStorageProvider implementation.");
 	}
 
 	@Test
@@ -93,10 +115,18 @@ public class GatekeeperModuleStarterTest {
 	public void testStartModuleLogsImplementationDetails() throws Exception {
 		startGatekeeperModuleStarter();
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
-				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as UserPickerProvider implementation.");
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
+						+ "UserPickerProvider implementation with preference level 0.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
-				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as UserStorageProvider implementation.");
+				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
+						+ "UserPickerProvider implementation.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
+						+ "UserStorageProvider implementation with preference level 0.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
+				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
+						+ "UserStorageProvider implementation.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 4),
 				"Found someGuestUserId as guestUserId");
 	}
 
@@ -125,22 +155,27 @@ public class GatekeeperModuleStarterTest {
 		assertNotNull(caughtException);
 	}
 
-	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""
-			+ "More than one implementation found for UserPickerProvider")
-	public void testStartModuleThrowsErrorIfMoreThanOneUserPickerProviderImplementations()
-			throws Exception {
-		userPickerProviders.add(new UserPickerProviderSpy(null));
-		startGatekeeperModuleStarter();
-	}
-
 	@Test
 	public void testStartModuleLogsErrorIfMoreThanOneUserPickerProviderImplementations()
 			throws Exception {
+		userPickerProviders.add(new UserPickerProviderSpy2(null));
 		userPickerProviders.add(new UserPickerProviderSpy(null));
-		startGatekeeperMakeSureAnExceptionIsThrown();
+		startGatekeeperModuleStarter();
 		String testedClassName = "GatekeeperModuleStarterImp";
-		assertEquals(loggerFactorySpy.getFatalLogMessageUsingClassNameAndNo(testedClassName, 0),
-				"More than one implementation found for UserPickerProvider");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
+						+ "UserPickerProvider implementation with preference level 0.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy2 as "
+						+ "UserPickerProvider implementation with preference level 2.");
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
+				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
+						+ "UserPickerProvider implementation with preference level 0.");
+
+		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
+				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy2 as "
+						+ "UserPickerProvider implementation.");
+
 	}
 
 	@Test(expectedExceptions = GatekeeperInitializationException.class, expectedExceptionsMessageRegExp = ""

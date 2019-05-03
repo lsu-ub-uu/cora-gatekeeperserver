@@ -63,4 +63,9 @@ public class UserPickerProviderSpy implements UserPickerProvider {
 		return userStorage;
 	}
 
+	@Override
+	public int getPreferenceLevel() {
+		return 0;
+	}
+
 }
