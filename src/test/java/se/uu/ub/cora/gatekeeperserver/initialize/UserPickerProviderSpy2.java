@@ -28,13 +28,13 @@ import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
 import se.uu.ub.cora.gatekeeperserver.UserPickerSpy;
 
-public class UserPickerProviderSpy implements UserPickerProvider {
+public class UserPickerProviderSpy2 implements UserPickerProvider {
 	public List<UserPickerSpy> factoredUserPickers = new ArrayList<>();
 	private Map<String, String> initInfo;
 	private UserStorage userStorage;
 	private String guestUserId;
 
-	public UserPickerProviderSpy(Map<String, String> initInfo) {
+	public UserPickerProviderSpy2(Map<String, String> initInfo) {
 		this.initInfo = initInfo;
 	}
 
@@ -65,7 +65,7 @@ public class UserPickerProviderSpy implements UserPickerProvider {
 
 	@Override
 	public int getOrderToSelectImplementionsBy() {
-		return 0;
+		return 2;
 	}
 
 }

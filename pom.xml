@@ -27,7 +27,7 @@
 	<properties>
 		<logger.version>1.0.0</logger.version>
 		<bookkeeper.version>1.0.0</bookkeeper.version>
-		<gatekeeper.version>1.0.0</gatekeeper.version>
+		<gatekeeper.version>1.1.0</gatekeeper.version>
 		<json.version>1.0.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jersey.version>2.27</jersey.version>
