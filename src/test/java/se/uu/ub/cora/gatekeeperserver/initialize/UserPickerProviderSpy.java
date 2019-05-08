@@ -64,7 +64,7 @@ public class UserPickerProviderSpy implements UserPickerProvider {
 	}
 
 	@Override
-	public int getPreferenceLevel() {
+	public int getOrderToSelectImplementionsBy() {
 		return 0;
 	}
 

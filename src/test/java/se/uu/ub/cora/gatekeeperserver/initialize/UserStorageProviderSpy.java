@@ -39,7 +39,7 @@ public class UserStorageProviderSpy implements UserStorageProvider {
 	}
 
 	@Override
-	public int getPreferenceLevel() {
+	public int getOrderToSelectImplementionsBy() {
 		return 0;
 	}
 

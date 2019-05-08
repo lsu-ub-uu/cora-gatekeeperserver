@@ -58,7 +58,7 @@ public class UserPickerProviderThrowsInvocationTargetOnStartupSpy implements Use
 	}
 
 	@Override
-	public int getPreferenceLevel() {
+	public int getOrderToSelectImplementionsBy() {
 		return 0;
 	}
 

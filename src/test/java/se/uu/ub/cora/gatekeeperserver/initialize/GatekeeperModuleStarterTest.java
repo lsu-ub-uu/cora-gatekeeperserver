@@ -90,13 +90,13 @@ public class GatekeeperModuleStarterTest {
 		String testedClassName = "GatekeeperModuleStarterImp";
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
-						+ "UserStorageProvider implementation with preference level 0.");
+						+ "UserStorageProvider implementation with select order 0.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy2 as "
-						+ "UserStorageProvider implementation with preference level 2.");
+						+ "UserStorageProvider implementation with select order 2.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 4),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
-						+ "UserStorageProvider implementation with preference level 0.");
+						+ "UserStorageProvider implementation with select order 0.");
 
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 5),
 				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy2 as "
@@ -116,13 +116,13 @@ public class GatekeeperModuleStarterTest {
 		startGatekeeperModuleStarter();
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
-						+ "UserPickerProvider implementation with preference level 0.");
+						+ "UserPickerProvider implementation with select order 0.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
 				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
 						+ "UserPickerProvider implementation.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
-						+ "UserStorageProvider implementation with preference level 0.");
+						+ "UserStorageProvider implementation with select order 0.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
 				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserStorageProviderSpy as "
 						+ "UserStorageProvider implementation.");
@@ -164,13 +164,13 @@ public class GatekeeperModuleStarterTest {
 		String testedClassName = "GatekeeperModuleStarterImp";
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
-						+ "UserPickerProvider implementation with preference level 0.");
+						+ "UserPickerProvider implementation with select order 0.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy2 as "
-						+ "UserPickerProvider implementation with preference level 2.");
+						+ "UserPickerProvider implementation with select order 2.");
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 2),
 				"Found se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy as "
-						+ "UserPickerProvider implementation with preference level 0.");
+						+ "UserPickerProvider implementation with select order 0.");
 
 		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 3),
 				"Using se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy2 as "

@@ -20,7 +20,7 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.Map;
 
-import se.uu.ub.cora.gatekeeper.user.PreferenceLevel;
+import se.uu.ub.cora.gatekeeper.user.SelectOrder;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
@@ -32,7 +32,6 @@ import se.uu.ub.cora.logger.Logger;
 import se.uu.ub.cora.logger.LoggerProvider;
 
 public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
-	private static final String IMPLEMENTATION = " implementation";
 	private static final String FOUND = "Found ";
 	private Map<String, String> initInfo;
 	private Iterable<UserPickerProvider> userPickerProviders;
@@ -83,7 +82,7 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 		}
 	}
 
-	private <T extends PreferenceLevel> T getImplementationBasedOnPreferenceLevelThrowErrorIfNone(
+	private <T extends SelectOrder> T getImplementationBasedOnPreferenceLevelThrowErrorIfNone(
 			Iterable<T> implementations, String interfaceClassName) {
 		T implementation = findAndLogPreferedImplementation(implementations, interfaceClassName);
 		throwErrorIfNoImplementationFound(interfaceClassName, implementation);
@@ -92,32 +91,28 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 		return implementation;
 	}
 
-	private <T extends PreferenceLevel> void throwErrorIfNoImplementationFound(
+	private <T extends SelectOrder> void throwErrorIfNoImplementationFound(
 			String interfaceClassName, T implementation) {
 		if (null == implementation) {
-			throwAndLogError(interfaceClassName);
+			String errorMessage = "No implementations found for " + interfaceClassName;
+			log.logFatalUsingMessage(errorMessage);
+			throw new GatekeeperInitializationException(errorMessage);
 		}
 	}
 
-	private <T extends PreferenceLevel> T findAndLogPreferedImplementation(
-			Iterable<T> implementations, String interfaceClassName) {
+	private <T extends SelectOrder> T findAndLogPreferedImplementation(Iterable<T> implementations,
+			String interfaceClassName) {
 		T implementation = null;
 		int preferenceLevel = -99999;
 		for (T currentImplementation : implementations) {
-			if (preferenceLevel < currentImplementation.getPreferenceLevel()) {
-				preferenceLevel = currentImplementation.getPreferenceLevel();
+			if (preferenceLevel < currentImplementation.getOrderToSelectImplementionsBy()) {
+				preferenceLevel = currentImplementation.getOrderToSelectImplementionsBy();
 				implementation = currentImplementation;
 			}
 			log.logInfoUsingMessage(FOUND + currentImplementation.getClass().getName() + " as "
-					+ interfaceClassName + " implementation with preference level "
-					+ currentImplementation.getPreferenceLevel() + ".");
+					+ interfaceClassName + " implementation with select order "
+					+ currentImplementation.getOrderToSelectImplementionsBy() + ".");
 		}
 		return implementation;
-	}
-
-	private void throwAndLogError(String interfaceClassName) {
-		String errorMessage = "No implementations found for " + interfaceClassName;
-		log.logFatalUsingMessage(errorMessage);
-		throw new GatekeeperInitializationException(errorMessage);
 	}
 }
