@@ -91,15 +91,6 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 		return implementation;
 	}
 
-	private <T extends SelectOrder> void throwErrorIfNoImplementationFound(
-			String interfaceClassName, T implementation) {
-		if (null == implementation) {
-			String errorMessage = "No implementations found for " + interfaceClassName;
-			log.logFatalUsingMessage(errorMessage);
-			throw new GatekeeperInitializationException(errorMessage);
-		}
-	}
-
 	private <T extends SelectOrder> T findAndLogPreferedImplementation(Iterable<T> implementations,
 			String interfaceClassName) {
 		T implementation = null;
@@ -114,5 +105,14 @@ public class GatekeeperModuleStarterImp implements GatekeeperModuleStarter {
 					+ currentImplementation.getOrderToSelectImplementionsBy() + ".");
 		}
 		return implementation;
+	}
+
+	private <T extends SelectOrder> void throwErrorIfNoImplementationFound(
+			String interfaceClassName, T implementation) {
+		if (null == implementation) {
+			String errorMessage = "No implementations found for " + interfaceClassName;
+			log.logFatalUsingMessage(errorMessage);
+			throw new GatekeeperInitializationException(errorMessage);
+		}
 	}
 }

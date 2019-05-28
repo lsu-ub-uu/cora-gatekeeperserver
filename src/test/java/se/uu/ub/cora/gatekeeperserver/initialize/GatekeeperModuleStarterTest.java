@@ -82,7 +82,7 @@ public class GatekeeperModuleStarterTest {
 	}
 
 	@Test
-	public void testStartModuleLogsErrorIfMoreThanOneUserStorageProviderImplementations()
+	public void testStartModuleLogsInfoIfMoreThanOneUserStorageProviderImplementations()
 			throws Exception {
 		userStorageProviders.add(new UserStorageProviderSpy2());
 		userStorageProviders.add(new UserStorageProviderSpy());
