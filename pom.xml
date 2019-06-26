@@ -26,7 +26,6 @@
 
 	<properties>
 		<logger.version>1.0.0</logger.version>
-<!-- 		<bookkeeper.version>1.0.0</bookkeeper.version> -->
 		<coradata.version>0.1-SNAPSHOT</coradata.version>
 		<gatekeeper.version>1.1.1-SNAPSHOT</gatekeeper.version>
 		<json.version>1.0.0</json.version>
@@ -49,12 +48,6 @@
 			<version>${logger.version}</version>
 			<scope>provided</scope>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>se.uu.ub.cora</groupId> -->
-<!-- 			<artifactId>bookkeeper</artifactId> -->
-<!-- 			<version>${bookkeeper.version}</version> -->
-<!-- 			<scope>provided</scope> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>se.uu.ub.cora</groupId>
 			<artifactId>coradata</artifactId>
