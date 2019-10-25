@@ -67,8 +67,8 @@ public final class JsonToUserInfoConverter {
 	}
 
 	private boolean idInUserStorageIsSet(Map<String, String> childValues) {
-		return childValues.containsKey(ID_IN_USER_STORAGE)
-				&& childValues.get(ID_IN_USER_STORAGE).length() > 0;
+		String idInUserStorage = childValues.get(ID_IN_USER_STORAGE);
+		return idInUserStorage != null && idInUserStorage.length() > 0;
 	}
 
 }

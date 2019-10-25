@@ -42,8 +42,8 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	private Logger log = LoggerProvider.getLoggerForClass(GatekeeperModuleInitializer.class);
 
 	@Override
-	public void contextInitialized(ServletContextEvent arg0) {
-		servletContext = arg0.getServletContext();
+	public void contextInitialized(ServletContextEvent contextEvent) {
+		servletContext = contextEvent.getServletContext();
 		initializeGatekeeper();
 	}
 

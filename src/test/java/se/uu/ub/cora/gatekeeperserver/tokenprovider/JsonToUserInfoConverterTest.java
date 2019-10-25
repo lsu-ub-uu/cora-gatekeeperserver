@@ -25,7 +25,6 @@ import static org.testng.Assert.assertNull;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
-import se.uu.ub.cora.gatekeeperserver.tokenprovider.JsonToUserInfoConverter;
 
 public class JsonToUserInfoConverterTest {
 	@Test
