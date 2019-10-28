@@ -19,8 +19,8 @@
 
 package se.uu.ub.cora.gatekeeperserver.dependency;
 
-import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
+import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperImp;
 
 public class GatekeeperLocatorSpy implements GatekeeperLocator {
 	public boolean locatorWasCalled = false;

@@ -17,7 +17,7 @@
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package se.uu.ub.cora.gatekeeperserver;
+package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,16 +27,18 @@ import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.UserPicker;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
+import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public enum GatekeeperImp implements Gatekeeper {
 	INSTANCE;
+
 	private static final int VALID_FOR_NO_SECONDS = 600;
 	private UserPickerProvider userPickerProvider;
 	private Map<String, User> pickedUsers = new HashMap<>();
 
-	public void setUserPickerProvider(UserPickerProvider userPickerProvider) {
+	void setUserPickerProvider(UserPickerProvider userPickerProvider) {
 		this.userPickerProvider = userPickerProvider;
 	}
 
@@ -73,7 +75,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		try {
 			return tryToGetAuthTokenForUserInfo(userInfo);
 		} catch (Exception e) {
-			throw new AuthenticationException("Could not pick user for userInfo: " + e);
+			throw new AuthenticationException("Could not pick user for userInfo: " + e, e);
 		}
 	}
 

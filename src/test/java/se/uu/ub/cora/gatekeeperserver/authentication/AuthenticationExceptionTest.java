@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Uppsala University Library
+ * Copyright 2015, 2019 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -19,16 +19,25 @@
 
 package se.uu.ub.cora.gatekeeperserver.authentication;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
-import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
+import org.testng.annotations.Test;
 
 public class AuthenticationExceptionTest {
 	@Test
 	public void testInit() {
 		AuthenticationException notAuthenticated = new AuthenticationException("message");
 
-		Assert.assertEquals(notAuthenticated.getMessage(), "message");
+		assertEquals(notAuthenticated.getMessage(), "message");
+	}
+
+	@Test
+	public void testInitWithException() {
+		Exception exception = new Exception();
+		AuthenticationException notAuthenticated = new AuthenticationException("message",
+				exception);
+
+		assertEquals(notAuthenticated.getMessage(), "message");
+		assertEquals(notAuthenticated.getCause(), exception);
 	}
 }

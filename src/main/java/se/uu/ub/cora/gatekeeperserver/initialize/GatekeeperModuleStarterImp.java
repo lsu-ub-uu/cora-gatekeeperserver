@@ -24,7 +24,6 @@ import se.uu.ub.cora.gatekeeper.user.SelectOrder;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorage;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
-import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorImp;

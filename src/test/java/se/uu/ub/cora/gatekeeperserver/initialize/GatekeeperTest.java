@@ -17,7 +17,7 @@
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package se.uu.ub.cora.gatekeeperserver;
+package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -31,9 +31,7 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
-import se.uu.ub.cora.gatekeeperserver.GatekeeperImp;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
-import se.uu.ub.cora.gatekeeperserver.initialize.UserPickerProviderSpy;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public class GatekeeperTest {
@@ -154,6 +152,18 @@ public class GatekeeperTest {
 		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
 				"someLoginDomain");
 		gatekeeper.getAuthTokenForUserInfo(userInfo);
+	}
+
+	@Test
+	public void testGetAuthTokenWithProblemSendsAlongInitalException() {
+		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
+				"someLoginDomain");
+		try {
+			gatekeeper.getAuthTokenForUserInfo(userInfo);
+
+		} catch (Exception e) {
+			assertTrue(e.getCause() instanceof RuntimeException);
+		}
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class)
