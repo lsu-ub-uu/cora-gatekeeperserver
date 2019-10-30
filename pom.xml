@@ -29,7 +29,9 @@
 		<gatekeeper.version>2.0.0</gatekeeper.version>
 		<json.version>2.0.1</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
-		<jersey.version>2.27</jersey.version>
+		<jaxb-api.version>2.3.1</jaxb-api.version>
+		<servlet-api.version>4.0.1</servlet-api.version>
+		<jersey.version>2.29.1</jersey.version>
 		<storage.version>2.1.0</storage.version>
 	</properties>
 
@@ -98,7 +100,7 @@
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version>
+			<version>${servlet-api.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- The JAXB APIs are considered to be Java EE APIs, and therefore are 
@@ -107,18 +109,14 @@
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
-			<version>2.3.0</version>
+			<version>${jaxb-api.version}</version>
+			<exclusions>
+		        <exclusion>
+		            <groupId>javax.activation</groupId>
+		            <artifactId>javax.activation-api</artifactId>
+		        </exclusion>
+		    </exclusions>
 		</dependency>
-		<dependency>
-			<groupId>javax.activation</groupId>
-			<artifactId>activation</artifactId>
-			<version>1.1.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.activation</groupId>
-			<artifactId>javax.activation</artifactId>
-			<version>1.2.0</version>
-		</dependency> 
 	</dependencies>
 	<build>
 		<finalName>gatekeeperserver</finalName>
