@@ -18,14 +18,15 @@
 	</parent>
 
 	<artifactId>gatekeeperserver</artifactId>
-	<version>3.2-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<version>4.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	
 
 	<name>gatekeeperserver</name>
 
 	<properties>
 		<logger.version>2.0.0</logger.version>
+		
 		<gatekeeper.version>3.3.0</gatekeeper.version>
 		<json.version>2.0.1</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
@@ -94,7 +95,7 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
 			<version>${servlet-api.version}</version>
-			<scope>provided</scope>
+			<scope>compile</scope>
 		</dependency>
 		<!-- The JAXB APIs are considered to be Java EE APIs, and therefore are 
 			no longer contained on the default class path in Java SE 9. In Java 11 they 
