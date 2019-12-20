@@ -9,4 +9,6 @@ module se.uu.ub.cora.gatekeeperserver {
 
 	uses se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 	uses se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
+
+	exports se.uu.ub.cora.gatekeeperserver.initialize;
 }
