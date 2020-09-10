@@ -23,9 +23,6 @@ import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
-import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthTokenToJsonConverter;
-
 public class AuthTokenToJsonConverterTest {
 	@Test
 	public void testAuthTokenToJsonConverter() {

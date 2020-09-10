@@ -27,8 +27,6 @@ import java.lang.reflect.Modifier;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
-
 public class GatekeeperInstanceProviderTest {
 	@Test
 	public void testPrivateConstructor() throws Exception {

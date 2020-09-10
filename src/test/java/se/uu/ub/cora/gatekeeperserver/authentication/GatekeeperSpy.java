@@ -22,7 +22,6 @@ package se.uu.ub.cora.gatekeeperserver.authentication;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeper.user.UserInfo;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
-import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public class GatekeeperSpy implements Gatekeeper {
@@ -55,8 +54,8 @@ public class GatekeeperSpy implements Gatekeeper {
 			throw new AuthenticationException("problem getting authToken for userInfo");
 		}
 		getAuthTokenForUserInfoWasCalled = true;
-		return AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin("someAuthToken", 600,
-				"someIdFromStorage", "someIdFromLogin");
+		return AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin("someAuthToken",
+				600, "someIdFromStorage", "someIdFromLogin");
 	}
 
 	@Override

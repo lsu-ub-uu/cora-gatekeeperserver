@@ -29,7 +29,6 @@ import javax.ws.rs.core.Response.Status;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticatorEndpoint;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 
 public class AuthenticatorEndpointTest {

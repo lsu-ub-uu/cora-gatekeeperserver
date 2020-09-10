@@ -31,7 +31,6 @@ import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeperserver.authentication.GateKeeperLocatorSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
-import se.uu.ub.cora.gatekeeperserver.tokenprovider.TokenProviderEndpoint;
 
 public class TokenProviderEndpointTest {
 	private Response response;

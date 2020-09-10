@@ -23,8 +23,6 @@ import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
-
 public class AuthTokenTest {
 	@Test
 	public void test() {

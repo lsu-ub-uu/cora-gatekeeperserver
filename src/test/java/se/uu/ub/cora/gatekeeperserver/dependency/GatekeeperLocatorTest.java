@@ -27,8 +27,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
-import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
-import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorImp;
 import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperImp;
 
 public class GatekeeperLocatorTest {

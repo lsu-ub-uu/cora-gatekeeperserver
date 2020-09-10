@@ -22,8 +22,6 @@ import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperInitializationException;
-
 public class GatekeeperInitializationExceptionTest {
 	@Test
 	public void testInit() {
