@@ -76,12 +76,6 @@
 			<version>${testng.version}</version>
 			<scope>test</scope>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>javax.ws.rs</groupId> -->
-<!-- 			<artifactId>javax.ws.rs-api</artifactId> -->
-<!-- 			<version>${javax.ws.rs.version}</version> -->
-<!-- 			<scope>compile</scope> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
 			<artifactId>jersey-container-servlet</artifactId>
@@ -104,20 +98,6 @@
 			<version>${servlet-api.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- The JAXB APIs are considered to be Java EE APIs, and therefore are 
-			no longer contained on the default class path in Java SE 9. In Java 11 they 
-			are completely removed from the JDK. -->
-<!-- 		<dependency> -->
-<!-- 			<groupId>javax.xml.bind</groupId> -->
-<!-- 			<artifactId>jaxb-api</artifactId> -->
-<!-- 			<version>${jaxb-api.version}</version> -->
-<!-- 			<exclusions> -->
-<!-- 		        <exclusion> -->
-<!-- 		            <groupId>javax.activation</groupId> -->
-<!-- 		            <artifactId>javax.activation-api</artifactId> -->
-<!-- 		        </exclusion> -->
-<!-- 		    </exclusions> -->
-<!-- 		</dependency> -->
 	</dependencies>
 	<build>
 		<finalName>gatekeeperserver</finalName>
