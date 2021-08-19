@@ -1,8 +1,7 @@
 module se.uu.ub.cora.gatekeeperserver {
-	requires transitive java.ws.rs;
-	requires transitive jakarta.activation;
+	requires transitive jakarta.ws.rs;
 	requires transitive se.uu.ub.cora.json;
-	requires transitive javax.servlet.api;
+	requires transitive jakarta.servlet;
 
 	requires se.uu.ub.cora.gatekeeper;
 	requires se.uu.ub.cora.logger;
