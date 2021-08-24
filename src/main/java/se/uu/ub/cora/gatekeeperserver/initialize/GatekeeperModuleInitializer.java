@@ -22,17 +22,15 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.ServiceLoader;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
-
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
 import se.uu.ub.cora.logger.Logger;
 import se.uu.ub.cora.logger.LoggerProvider;
 
-@WebListener
+@jakarta.servlet.annotation.WebListener
 public class GatekeeperModuleInitializer implements ServletContextListener {
 	private ServletContext servletContext;
 	private HashMap<String, String> initInfo = new HashMap<>();

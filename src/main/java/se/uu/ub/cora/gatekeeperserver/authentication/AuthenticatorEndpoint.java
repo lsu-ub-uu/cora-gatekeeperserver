@@ -19,11 +19,10 @@
 
 package se.uu.ub.cora.gatekeeperserver.authentication;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
