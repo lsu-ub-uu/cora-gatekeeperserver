@@ -27,9 +27,9 @@
 	<properties>
 		<logger.version>2.4.0</logger.version>
 		
-		<gatekeeper.version>3.8.0</gatekeeper.version>
+		<gatekeeper.version>3.9.0</gatekeeper.version>
 		<coradata.version>5.2.0</coradata.version>
-		<json.version>3.0.0</json.version>
+		<json.version>3.1.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jaxb-api.version>2.3.1</jaxb-api.version>
 		<servlet-api.version>5.0.0</servlet-api.version>
