@@ -27,8 +27,8 @@
 	<properties>
 		<logger.version>2.5.0</logger.version>
 		
-		<gatekeeper.version>3.12.0</gatekeeper.version>
-		<coradata.version>7.0-SNAPSHOT</coradata.version>
+		<gatekeeper.version>3.13.0</gatekeeper.version>
+		<coradata.version>7.0.0</coradata.version>
 		<json.version>3.3.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jaxb-api.version>2.3.1</jaxb-api.version>
