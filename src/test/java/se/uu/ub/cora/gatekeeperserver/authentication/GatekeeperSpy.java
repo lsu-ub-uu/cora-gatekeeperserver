@@ -19,8 +19,8 @@
 
 package se.uu.ub.cora.gatekeeperserver.authentication;
 
+import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
-import se.uu.ub.cora.gatekeeper.user.UserInfo;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 

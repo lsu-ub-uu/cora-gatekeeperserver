@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017 Uppsala University Library
+ * Copyright 2016, 2017, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,32 +20,39 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Supplier;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.gatekeeper.picker.UserInfo;
+import se.uu.ub.cora.gatekeeper.picker.UserPicker;
+import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.User;
-import se.uu.ub.cora.gatekeeper.user.UserInfo;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
+import se.uu.ub.cora.logger.LoggerProvider;
+import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
 
 public class GatekeeperTest {
-	private static final int FIRST_NON_HARDCODED = 0;
-	private UserPickerProviderSpy userPickerProvider;
+	private UserPickerInstanceProviderSpy userPickerInstanceProvider;
 	private GatekeeperImp gatekeeper;
-	private User logedInUser;
+	private LoggerFactorySpy loggerFactory;
+	private UserInfo userInfo;
 
 	@BeforeMethod
 	public void setUp() {
-		Map<String, String> initInfo = new HashMap<>();
-		initInfo.put("storageOnDiskBasePath", "");
-		userPickerProvider = new UserPickerProviderSpy(initInfo);
-		GatekeeperImp.INSTANCE.setUserPickerProvider(userPickerProvider);
+		loggerFactory = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(loggerFactory);
+		userPickerInstanceProvider = new UserPickerInstanceProviderSpy();
+		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProvider);
+		userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
 		gatekeeper = GatekeeperImp.INSTANCE;
 	}
 
@@ -57,140 +64,153 @@ public class GatekeeperTest {
 
 	@Test
 	public void testNoTokenAlsoKnownAsGuest() {
-		logedInUser = gatekeeper.getUserForToken(null);
-		assertPluggedInUserPickerWasUsedToPickGuest();
+		User logedInUser = gatekeeper.getUserForToken(null);
 
-		User expectedGuest = userPickerProvider.factoredUserPickers.get(0).returnedUser;
-		assertEquals(logedInUser, expectedGuest);
+		assertGuestWasPicked(logedInUser);
 	}
 
-	private void assertPluggedInUserPickerWasUsedToPickGuest() {
-		assertTrue(
-				userPickerProvider.factoredUserPickers.get(FIRST_NON_HARDCODED).pickGuestWasCalled);
+	private void assertGuestWasPicked(User logedInUser) {
+		UserPickerSpy userPicker = assertAndReturnUserPickerProviderWasUsedToGetUserPicker();
+		userPicker.MCR.assertMethodWasCalled("pickGuest");
+		userPicker.MCR.assertReturn("pickGuest", 0, logedInUser);
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class)
+	private UserPickerSpy assertAndReturnUserPickerProviderWasUsedToGetUserPicker() {
+		userPickerInstanceProvider.MCR.assertMethodWasCalled("getUserPicker");
+		return (UserPickerSpy) userPickerInstanceProvider.MCR.getReturnValue("getUserPicker", 0);
+	}
+
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
+			+ "token not valid")
 	public void testNonAuthenticatedUser() {
 		gatekeeper.getUserForToken("dummyNonAuthenticatedToken");
 	}
 
 	@Test
-	public void testUserOnlyPickedOncePerAuthToken() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
-		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-
-		logedInUser = gatekeeper.getUserForToken(authToken.token);
-		assertPluggedInUserPickerWasUsedOnce();
-		logedInUser = gatekeeper.getUserForToken(authToken.token);
-		assertPluggedInUserPickerWasUsedOnce();
-
-	}
-
-	private void assertPluggedInUserPickerWasUsedOnce() {
-		assertEquals(userPickerProvider.factoredUserPickers.size(), 1);
-	}
-
-	@Test
 	public void testGetAuthTokenForUserInfo() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 
-		assertEquals(userPickerProvider.factoredUserPickers.get(FIRST_NON_HARDCODED).usedUserInfo,
-				userInfo);
-		assertNotNull(authToken.token);
-		assertEquals(authToken.validForNoSeconds, 600);
-		assertEquals(authToken.idInUserStorage, "12345");
-		assertEquals(authToken.idFromLogin, "someLoginId");
-	}
-
-	@Test
-	public void testGetAuthTokenForUserInfoWithIdStorage() {
-		UserInfo userInfo = UserInfo.withIdInUserStorage("someIdInStorage");
-		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-
-		assertEquals(userPickerProvider.factoredUserPickers.get(FIRST_NON_HARDCODED).usedUserInfo,
-				userInfo);
+		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
 
 		assertNotNull(authToken.token);
 		assertEquals(authToken.validForNoSeconds, 600);
-		assertEquals(authToken.idInUserStorage, "someIdInStorage");
-		assertEquals(authToken.idFromLogin, "loginIdFromUserPickerSpy");
+		assertSame(authToken.idInUserStorage, pickedUser.id);
+		assertSame(authToken.idFromLogin, pickedUser.loginId);
+		assertSame(authToken.firstName, pickedUser.firstName);
+		assertSame(authToken.lastName, pickedUser.lastName);
+	}
+
+	private User assertAndReturnPickUserWasUsed(UserInfo userInfo) {
+		UserPickerSpy userPicker = assertAndReturnUserPickerProviderWasUsedToGetUserPicker();
+		userPicker.MCR.assertMethodWasCalled("pickUser");
+		userPicker.MCR.assertParameters("pickUser", 0, userInfo);
+		User pickedUser = (User) userPicker.MCR.getReturnValue("pickUser", 0);
+		return pickedUser;
 	}
 
 	@Test
-	public void testGetAuthTokenForUserInfoWithIdStorageThatReturnsName() {
-		UserInfo userInfo = UserInfo.withIdInUserStorage("someIdInStorageReturningName");
+	public void testGetAuthTokenForUserInfo_noNames() {
+		User user = new User("user");
+		user.loginId = "loginId";
+		setUserToReturnFromUserProviderSpy(user);
+
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-
-		assertEquals(userPickerProvider.factoredUserPickers.get(FIRST_NON_HARDCODED).usedUserInfo,
-				userInfo);
-
+		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
 		assertNotNull(authToken.token);
 		assertEquals(authToken.validForNoSeconds, 600);
-		assertEquals(authToken.idInUserStorage, "someIdInStorageReturningName");
-		assertEquals(authToken.idFromLogin, "loginIdFromUserPickerSpy");
-		assertEquals(authToken.firstName, "firstNameFromUserPickerSpy");
-		assertEquals(authToken.lastName, "lastNameFromUserPickerSpy");
+		assertSame(authToken.idInUserStorage, pickedUser.id);
+		assertSame(authToken.idFromLogin, pickedUser.loginId);
+		assertNull(authToken.firstName);
+		assertNull(authToken.lastName);
+	}
+
+	private void setUserToReturnFromUserProviderSpy(User user) {
+		UserPickerSpy userPicker = new UserPickerSpy();
+		userPicker.MRV.setDefaultReturnValuesSupplier("pickUser", (Supplier<User>) () -> user);
+		userPickerInstanceProvider.MRV.setDefaultReturnValuesSupplier("getUserPicker",
+				(Supplier<UserPicker>) () -> userPicker);
 	}
 
 	@Test
-	public void testGetUserForToken() {
-		AuthToken authToken = getTokenFromLoginToUseInTestNormallySentFromClient();
-
-		logedInUser = gatekeeper.getUserForToken(authToken.token);
-		assertEquals(logedInUser.loginId, "someLoginId");
-	}
-
-	private AuthToken getTokenFromLoginToUseInTestNormallySentFromClient() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
-		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-		return authToken;
-	}
-
-	@Test(expectedExceptions = AuthenticationException.class)
 	public void testGetAuthTokenWithProblem() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
-				"someLoginDomain");
-		gatekeeper.getAuthTokenForUserInfo(userInfo);
-	}
-
-	@Test
-	public void testGetAuthTokenWithProblemSendsAlongInitalException() {
+		RuntimeException errorToThrow = new RuntimeException();
+		userPickerInstanceProvider.MRV.setAlwaysThrowException("getUserPicker", errorToThrow);
 		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
 				"someLoginDomain");
 		try {
 			gatekeeper.getAuthTokenForUserInfo(userInfo);
-
+			assertTrue(false);
 		} catch (Exception e) {
-			assertTrue(e.getCause() instanceof RuntimeException);
+			assertTrue(e instanceof AuthenticationException);
+			assertEquals(e.getMessage(),
+					"Could not pick user for userInfo, with error: java.lang.RuntimeException");
+			assertSame(e.getCause(), errorToThrow);
 		}
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class)
-	public void testRemoveAuthTokenForUser() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
-		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-
-		logedInUser = gatekeeper.getUserForToken(authToken.token);
-		assertEquals(logedInUser.loginId, "someLoginId");
-
-		gatekeeper.removeAuthTokenForUser(authToken.token, "12345");
-		gatekeeper.getUserForToken(authToken.token);
+	@Test
+	public void testGetAuthTokenWithProblem_pickUserFails() {
+		RuntimeException errorToThrow = new RuntimeException("errorFromPickUser");
+		UserPickerSpy userPicker = new UserPickerSpy();
+		userPicker.MRV.setAlwaysThrowException("pickUser", errorToThrow);
+		userPickerInstanceProvider.MRV.setDefaultReturnValuesSupplier("getUserPicker",
+				(Supplier<UserPicker>) () -> userPicker);
+		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
+				"someLoginDomain");
+		try {
+			gatekeeper.getAuthTokenForUserInfo(userInfo);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof AuthenticationException);
+			assertEquals(e.getMessage(), "Could not pick user for userInfo, with error: "
+					+ "java.lang.RuntimeException: errorFromPickUser");
+			assertSame(e.getCause(), errorToThrow);
+		}
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class)
+	@Test
+	public void testGetAuthTokenForUserInfo_canReturnCorrectUserForReturnedToken() {
+		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+
+		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
+		User logedInUser = gatekeeper.getUserForToken(authToken.token);
+		assertSame(logedInUser, pickedUser);
+	}
+
+	@Test
+	public void testMultipleLoginsReturnsDiferentTokens() {
+		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+		AuthToken authToken2 = gatekeeper.getAuthTokenForUserInfo(userInfo);
+
+		assertNotEquals(authToken.token, authToken2.token);
+	}
+
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
+			+ "AuthToken does not exist")
 	public void testRemoveAuthTokenForUserTokenDoesNotExist() {
 		gatekeeper.removeAuthTokenForUser("someNonExistingToken", "someLoginId");
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class)
-	public void testRemoveAuthTokenForUserUserIdNotTheSame() {
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
+			+ "idInUserStorage does not exist")
+	public void testRemoveAuthTokenForUserFailsIfWrongUserId() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+		gatekeeper.getUserForToken(authToken.token);
+		gatekeeper.removeAuthTokenForUser(authToken.token, "notCorrectUserId");
+	}
 
-		logedInUser = gatekeeper.getUserForToken(authToken.token);
-		assertEquals(logedInUser.loginId, "someLoginId");
+	@Test
+	public void testRemoveAuthTokenForUser_removesAccess() {
+		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+		User logedInUser = gatekeeper.getUserForToken(authToken.token);
+		gatekeeper.removeAuthTokenForUser(authToken.token, logedInUser.id);
 
-		gatekeeper.removeAuthTokenForUser(authToken.token, "someOtherLoginId");
+		try {
+			gatekeeper.getUserForToken(authToken.token);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(e instanceof AuthenticationException);
+			assertEquals(e.getMessage(), "token not valid");
+		}
 	}
 }

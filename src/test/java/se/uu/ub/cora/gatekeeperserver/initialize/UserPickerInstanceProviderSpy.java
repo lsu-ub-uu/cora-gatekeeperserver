@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Uppsala University Library
+ * Copyright 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,21 +18,28 @@
  */
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
-import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.gatekeeper.user.UserStorage;
+import se.uu.ub.cora.gatekeeper.picker.UserPicker;
+import se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class UserStorageSpy implements UserStorage {
+public class UserPickerInstanceProviderSpy implements UserPickerInstanceProvider {
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
 
-	@Override
-	public DataGroup getUserById(String id) {
-		// TODO Auto-generated method stub
-		return null;
+	public UserPickerInstanceProviderSpy() {
+		MCR.useMRV(MRV);
+		MRV.setDefaultReturnValuesSupplier("getUserPicker", UserPickerSpy::new);
 	}
 
 	@Override
-	public DataGroup getUserByIdFromLogin(String idFromLogin) {
-		// TODO Auto-generated method stub
-		return null;
+	public int getOrderToSelectImplementionsBy() {
+		return 0;
+	}
+
+	@Override
+	public UserPicker getUserPicker() {
+		return (UserPicker) MCR.addCallAndReturnFromMRV();
 	}
 
 }

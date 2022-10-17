@@ -3,11 +3,13 @@ module se.uu.ub.cora.gatekeeperserver {
 	requires transitive se.uu.ub.cora.json;
 	requires transitive jakarta.servlet;
 
-	requires se.uu.ub.cora.gatekeeper;
+	requires transitive se.uu.ub.cora.gatekeeper;
 	requires se.uu.ub.cora.logger;
+	requires se.uu.ub.cora.initialize;
 
-	uses se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-	uses se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
+	uses se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
+	uses se.uu.ub.cora.gatekeeper.storage.UserStorageProvider;
 
 	exports se.uu.ub.cora.gatekeeperserver.initialize;
+	exports se.uu.ub.cora.gatekeeperserver.tokenprovider;
 }

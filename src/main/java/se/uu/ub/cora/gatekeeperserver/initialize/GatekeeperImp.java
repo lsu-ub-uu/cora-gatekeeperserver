@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017 Uppsala University Library
+ * Copyright 2016, 2017, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import se.uu.ub.cora.gatekeeper.picker.UserInfo;
+import se.uu.ub.cora.gatekeeper.picker.UserPicker;
+import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.User;
-import se.uu.ub.cora.gatekeeper.user.UserInfo;
-import se.uu.ub.cora.gatekeeper.user.UserPicker;
-import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
@@ -35,12 +35,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	INSTANCE;
 
 	private static final int VALID_FOR_NO_SECONDS = 600;
-	private UserPickerProvider userPickerProvider;
 	private Map<String, User> pickedUsers = new HashMap<>();
-
-	void setUserPickerProvider(UserPickerProvider userPickerProvider) {
-		this.userPickerProvider = userPickerProvider;
-	}
 
 	@Override
 	public User getUserForToken(String authToken) {
@@ -51,7 +46,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private User returnGuestUser() {
-		UserPicker userPicker = userPickerProvider.getUserPicker();
+		UserPicker userPicker = UserPickerProvider.getUserPicker();
 		return userPicker.pickGuest();
 	}
 
@@ -75,12 +70,14 @@ public enum GatekeeperImp implements Gatekeeper {
 		try {
 			return tryToGetAuthTokenForUserInfo(userInfo);
 		} catch (Exception e) {
-			throw new AuthenticationException("Could not pick user for userInfo: " + e, e);
+			throw new AuthenticationException("Could not pick user for userInfo, with error: " + e,
+					e);
 		}
 	}
 
 	private AuthToken tryToGetAuthTokenForUserInfo(UserInfo userInfo) {
-		User pickedUser = userPickerProvider.getUserPicker().pickUser(userInfo);
+		UserPicker userPicker = UserPickerProvider.getUserPicker();
+		User pickedUser = userPicker.pickUser(userInfo);
 		String generatedAuthToken = generateAuthToken();
 		pickedUsers.put(generatedAuthToken, pickedUser);
 		return createAuthTokenUsingPickedUserAndGeneratedAuthToken(pickedUser, generatedAuthToken);
@@ -90,31 +87,30 @@ public enum GatekeeperImp implements Gatekeeper {
 			String generatedAuthToken) {
 		AuthToken authToken = AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(
 				generatedAuthToken, VALID_FOR_NO_SECONDS, pickedUser.id, pickedUser.loginId);
+		setNamesInAuthToken(pickedUser, authToken);
+		return authToken;
+	}
+
+	private void setNamesInAuthToken(User pickedUser, AuthToken authToken) {
 		if (pickedUser.firstName != null) {
 			authToken.firstName = pickedUser.firstName;
 		}
 		if (pickedUser.lastName != null) {
 			authToken.lastName = pickedUser.lastName;
 		}
-		return authToken;
 	}
 
 	private String generateAuthToken() {
 		return UUID.randomUUID().toString();
 	}
 
-	public UserPickerProvider getUserPickerProvider() {
-		// method needed for test
-		return userPickerProvider;
-	}
-
 	@Override
 	public void removeAuthTokenForUser(String authTokenId, String idInUserStorage) {
-		authTokenExists(authTokenId);
+		throwErrorIfAuthTokenDoesNotExists(authTokenId);
 		removeAuthTokenIfUserIdMatches(authTokenId, idInUserStorage);
 	}
 
-	private void authTokenExists(String authTokenId) {
+	private void throwErrorIfAuthTokenDoesNotExists(String authTokenId) {
 		if (!pickedUsers.containsKey(authTokenId)) {
 			throw new AuthenticationException("AuthToken does not exist");
 		}

@@ -19,107 +19,69 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
-import java.util.Map;
-import java.util.ServiceLoader;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
-import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
-import se.uu.ub.cora.gatekeeperserver.log.LoggerFactorySpy;
+import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
+import se.uu.ub.cora.initialize.SettingsProvider;
 import se.uu.ub.cora.logger.LoggerProvider;
+import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
+import se.uu.ub.cora.logger.spies.LoggerSpy;
 
 public class GatekeeperModuleInitializerTest {
+	private LoggerFactorySpy loggerFactorySpy;
 	private ServletContext source;
 	private ServletContextEvent context;
-	private GatekeeperModuleInitializer initializer;
-	private LoggerFactorySpy loggerFactorySpy;
-	private String testedClassName = "GatekeeperModuleInitializer";
+	private GatekeeperModuleInitializer gatekeeperInitializer;
+	private UserPickerInstanceProviderSpy userPickerInstanceProviderSpy;
 
 	@BeforeMethod
 	public void beforeMethod() {
 		loggerFactorySpy = new LoggerFactorySpy();
 		LoggerProvider.setLoggerFactory(loggerFactorySpy);
+		userPickerInstanceProviderSpy = new UserPickerInstanceProviderSpy();
+		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProviderSpy);
 		source = new ServletContextSpy();
-		source.setInitParameter("initParam1", "initValue1");
-		source.setInitParameter("initParam2", "initValue2");
 		context = new ServletContextEvent(source);
-		initializer = new GatekeeperModuleInitializer();
+		setNeededInitParameters();
+		gatekeeperInitializer = new GatekeeperModuleInitializer();
 	}
 
-	@Test
-	public void testNonExceptionThrowingStartup() throws Exception {
-		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
-		assertTrue(starter.startWasCalled);
+	private void setNeededInitParameters() {
+		source.setInitParameter("initParam1", "initValue1");
+		source.setInitParameter("initParam2", "initValue2");
+
 	}
 
 	@Test
 	public void testLogMessagesOnStartup() throws Exception {
-		startGatekeeperModuleInitializerWithStarterSpy();
-		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 0),
+		gatekeeperInitializer.contextInitialized(context);
+
+		loggerFactorySpy.MCR.assertParameters("factorForClass", 0,
+				GatekeeperModuleInitializer.class);
+		LoggerSpy loggerSpy = (LoggerSpy) loggerFactorySpy.MCR.getReturnValue("factorForClass", 0);
+		loggerSpy.MCR.assertParameters("logInfoUsingMessage", 0,
 				"GatekeeperModuleInitializer starting...");
-		assertEquals(loggerFactorySpy.getInfoLogMessageUsingClassNameAndNo(testedClassName, 1),
+		loggerSpy.MCR.assertParameters("logInfoUsingMessage", 1,
 				"GatekeeperModuleInitializer started");
 	}
 
-	private GatekeeperModuleStarterSpy startGatekeeperModuleInitializerWithStarterSpy() {
-		GatekeeperModuleStarterSpy starter = new GatekeeperModuleStarterSpy();
-		initializer.setStarter(starter);
-		initializer.contextInitialized(context);
-		return starter;
+	@Test
+	public void testMakeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup()
+			throws Exception {
+		gatekeeperInitializer.contextInitialized(context);
+
+		userPickerInstanceProviderSpy.MCR.assertMethodWasCalled("getUserPicker");
 	}
 
 	@Test
 	public void testInitParametersArePassedOnToStarter() {
-		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
-		Map<String, String> initInfo = starter.initInfo;
-		assertEquals(initInfo.size(), 2);
-		assertEquals(initInfo.get("initParam1"), "initValue1");
-		assertEquals(initInfo.get("initParam2"), "initValue2");
+		gatekeeperInitializer.contextInitialized(context);
+
+		assertEquals(SettingsProvider.getSetting("initParam1"), "initValue1");
+		assertEquals(SettingsProvider.getSetting("initParam2"), "initValue2");
 	}
-
-	@Test
-	public void testUserPickerProviderImplementationsArePassedOnToStarter() {
-		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
-
-		Iterable<UserPickerProvider> iterable = starter.userPickerProviderImplementations;
-		assertTrue(iterable instanceof ServiceLoader);
-	}
-
-	@Test
-	public void testUserStorageProviderImplementationsArePassedOnToStarter() {
-		GatekeeperModuleStarterSpy starter = startGatekeeperModuleInitializerWithStarterSpy();
-
-		Iterable<UserStorageProvider> iterable = starter.userStorageProviderImplementations;
-		assertTrue(iterable instanceof ServiceLoader);
-	}
-
-	@Test
-	public void testInitUsesDefaultGatekeeperModuleStarter() throws Exception {
-		makeSureErrorIsThrownAsNoImplementationsExistInThisModule();
-		GatekeeperModuleStarterImp starter = (GatekeeperModuleStarterImp) initializer.getStarter();
-		assertStarterIsGatekeeperModuleStarter(starter);
-	}
-
-	private void makeSureErrorIsThrownAsNoImplementationsExistInThisModule() {
-		Exception caughtException = null;
-		try {
-			initializer.contextInitialized(context);
-		} catch (Exception e) {
-			caughtException = e;
-		}
-		assertTrue(caughtException instanceof GatekeeperInitializationException);
-		assertEquals(caughtException.getMessage(),
-				"No implementations found for UserPickerProvider");
-	}
-
-	private void assertStarterIsGatekeeperModuleStarter(GatekeeperModuleStarter starter) {
-		assertTrue(starter instanceof GatekeeperModuleStarterImp);
-	}
-
 }

@@ -20,23 +20,22 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.ServiceLoader;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
-import se.uu.ub.cora.gatekeeper.user.UserPickerProvider;
-import se.uu.ub.cora.gatekeeper.user.UserStorageProvider;
+import jakarta.servlet.annotation.WebListener;
+import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
+import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
+import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
+import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorImp;
+import se.uu.ub.cora.initialize.SettingsProvider;
 import se.uu.ub.cora.logger.Logger;
 import se.uu.ub.cora.logger.LoggerProvider;
 
-@jakarta.servlet.annotation.WebListener
+@WebListener
 public class GatekeeperModuleInitializer implements ServletContextListener {
 	private ServletContext servletContext;
-	private HashMap<String, String> initInfo = new HashMap<>();
-	private GatekeeperModuleStarter starter = new GatekeeperModuleStarterImp();
-	private Iterable<UserPickerProvider> userPickerProviderImplementations;
-	private ServiceLoader<UserStorageProvider> userStorageProviderImplementations;
 	private Logger log = LoggerProvider.getLoggerForClass(GatekeeperModuleInitializer.class);
 
 	@Override
@@ -49,41 +48,28 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 		String simpleName = GatekeeperModuleInitializer.class.getSimpleName();
 		log.logInfoUsingMessage(simpleName + " starting...");
 		collectInitInformation();
-		collectUserPickerProviderImplementations();
-		collectUserStorageImplementations();
-		startGatekeeperStarter();
+		startLocator();
+		makeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup();
 		log.logInfoUsingMessage(simpleName + " started");
 	}
 
+	private void makeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup() {
+		UserPickerProvider.getUserPicker();
+	}
+
 	private void collectInitInformation() {
+		HashMap<String, String> initInfo = new HashMap<>();
 		Enumeration<String> initParameterNames = servletContext.getInitParameterNames();
 		while (initParameterNames.hasMoreElements()) {
 			String key = initParameterNames.nextElement();
 			initInfo.put(key, servletContext.getInitParameter(key));
 		}
+		SettingsProvider.setSettings(initInfo);
 	}
 
-	private void collectUserPickerProviderImplementations() {
-		userPickerProviderImplementations = ServiceLoader.load(UserPickerProvider.class);
+	private void startLocator() {
+		GatekeeperLocator locator = new GatekeeperLocatorImp();
+		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
+		// GatekeeperImp.INSTANCE.setUserPickerProvider(userPickerProvider);
 	}
-
-	private void collectUserStorageImplementations() {
-		userStorageProviderImplementations = ServiceLoader.load(UserStorageProvider.class);
-	}
-
-	private void startGatekeeperStarter() {
-		starter.startUsingInitInfoAndUserPickerProvidersAndUserStorageProviders(initInfo,
-				userPickerProviderImplementations, userStorageProviderImplementations);
-	}
-
-	GatekeeperModuleStarter getStarter() {
-		// needed for test
-		return starter;
-	}
-
-	void setStarter(GatekeeperModuleStarter starter) {
-		this.starter = starter;
-
-	}
-
 }

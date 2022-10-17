@@ -22,7 +22,7 @@ package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 import java.util.HashMap;
 import java.util.Map;
 
-import se.uu.ub.cora.gatekeeper.user.UserInfo;
+import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.json.parser.JsonArray;
 import se.uu.ub.cora.json.parser.JsonObject;
 import se.uu.ub.cora.json.parser.JsonParser;
