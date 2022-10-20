@@ -27,16 +27,16 @@
 	<properties>
 		<logger.version>2.5.0</logger.version>
 		
-		<gatekeeper.version>4.0-SNAPSHOT</gatekeeper.version>
+		<gatekeeper.version>4.0.0</gatekeeper.version>
 <!--		<coradata.version>7.1.0</coradata.version>-->
-		<json.version>3.3.0</json.version>
+		<json.version>3.4.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jaxb-api.version>2.3.1</jaxb-api.version>
 		<servlet-api.version>5.0.0</servlet-api.version>
-		<initialize.version>1.0-SNAPSHOT</initialize.version>
-		<initialize-spies.version>1.0-SNAPSHOT</initialize-spies.version>
-		<testutils.version>1.6-SNAPSHOT</testutils.version>
-		<logger-spies.version>1.0-SNAPSHOT</logger-spies.version>
+		<initialize.version>1.0.0</initialize.version>
+		<initialize-spies.version>1.0.0</initialize-spies.version>
+		<testutils.version>1.6.0</testutils.version>
+		<logger-spies.version>1.0.0</logger-spies.version>
 		<jersey.version>3.0.8</jersey.version>
 	</properties>
 
