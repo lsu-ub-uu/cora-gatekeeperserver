@@ -24,20 +24,20 @@ public final class AuthToken {
 	public final String token;
 	public final int validForNoSeconds;
 	public final String idInUserStorage;
-	public final String idFromLogin;
+	public final String loginId;
 	public String firstName;
 	public String lastName;
 
-	private AuthToken(String id, int validForNoSeconds, String idInUserStorage, String idFromLogin) {
-		this.token = id;
+	private AuthToken(String token, int validForNoSeconds, String idInUserStorage, String loginId) {
+		this.token = token;
 		this.validForNoSeconds = validForNoSeconds;
 		this.idInUserStorage = idInUserStorage;
-		this.idFromLogin = idFromLogin;
+		this.loginId = loginId;
 	}
 
-	public static AuthToken withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(String id,
-			int validForNoSeconds, String idInUserStorage, String idFromLogin) {
-		return new AuthToken(id, validForNoSeconds, idInUserStorage, idFromLogin);
+	public static AuthToken withTokenAndValidForNoSecondsAndIdInUserStorageAndLoginId(String token,
+			int validForNoSeconds, String idInUserStorage, String loginId) {
+		return new AuthToken(token, validForNoSeconds, idInUserStorage, loginId);
 	}
 
 }

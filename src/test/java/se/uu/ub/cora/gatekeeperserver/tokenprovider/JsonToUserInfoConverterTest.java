@@ -29,42 +29,41 @@ import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 public class JsonToUserInfoConverterTest {
 	@Test
 	public void testJsonToUserInfoConverter() {
-		String jsonUserInfo = "{\"children\":[" + "{\"name\":\"idFromLogin\",\"value\":\"\"},"
+		String jsonUserInfo = "{\"children\":[" + "{\"name\":\"loginId\",\"value\":\"\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"131313\"}"
 				+ "],\"name\":\"userInfo\"}";
 		JsonToUserInfoConverter converter = new JsonToUserInfoConverter(jsonUserInfo);
 		UserInfo userInfo = converter.parseUserInfoFromJson();
 		assertEquals(userInfo.idInUserStorage, "131313");
-		assertNull(userInfo.idFromLogin);
+		assertNull(userInfo.loginId);
 		assertNull(userInfo.domainFromLogin);
 	}
 
 	@Test
 	public void testJsonToUserInfoConverter2() {
 		String jsonUserInfo = "{\"children\":["
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someLoginIdWithProblem\"},"
+				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"\"}" + "],\"name\":\"userInfo\"}";
 
 		JsonToUserInfoConverter converter = new JsonToUserInfoConverter(jsonUserInfo);
 		UserInfo userInfo = converter.parseUserInfoFromJson();
 		assertNull(userInfo.idInUserStorage);
-		assertEquals(userInfo.idFromLogin, "someLoginIdWithProblem");
+		assertEquals(userInfo.loginId, "someLoginIdWithProblem");
 		assertEquals(userInfo.domainFromLogin, "");
 	}
 
 	@Test
 	public void testJsonToUserInfoConverter2NoIdInUserStorage() {
 		String jsonUserInfo = "{\"children\":["
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someLoginIdWithProblem\"},"
+				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"}" + "],\"name\":\"userInfo\"}";
 
 		JsonToUserInfoConverter converter = new JsonToUserInfoConverter(jsonUserInfo);
 		UserInfo userInfo = converter.parseUserInfoFromJson();
 		assertNull(userInfo.idInUserStorage);
-		assertEquals(userInfo.idFromLogin, "someLoginIdWithProblem");
+		assertEquals(userInfo.loginId, "someLoginIdWithProblem");
 		assertEquals(userInfo.domainFromLogin, "");
 	}
-
 }

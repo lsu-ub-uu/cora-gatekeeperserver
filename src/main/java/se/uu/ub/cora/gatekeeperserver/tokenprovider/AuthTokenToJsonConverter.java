@@ -39,11 +39,10 @@ public final class AuthTokenToJsonConverter {
 		JsonObjectBuilder userBuilder = createObjectBuilderWithName("authToken");
 		JsonArrayBuilder userChildren = returnAndAddChildrenToBuilder(userBuilder);
 
-		addIdToJson(userChildren);
-
+		addTokenToJson(userChildren);
 		addValidForNoSecondsToJson(userChildren);
 		addIdInUserStorageToJson(userChildren);
-		addIdFromLoginToJson(userChildren);
+		addLoginIdToJson(userChildren);
 		possiblyAddNameToJson(userChildren);
 		return userBuilder.toJsonFormattedString();
 	}
@@ -54,10 +53,10 @@ public final class AuthTokenToJsonConverter {
 		return roleBuilder;
 	}
 
-	private void addIdToJson(JsonArrayBuilder userChildren) {
-		JsonObjectBuilder id = createObjectBuilderWithName("id");
-		id.addKeyString(VALUE, authToken.token);
-		userChildren.addJsonObjectBuilder(id);
+	private void addTokenToJson(JsonArrayBuilder userChildren) {
+		JsonObjectBuilder token = createObjectBuilderWithName("token");
+		token.addKeyString(VALUE, authToken.token);
+		userChildren.addJsonObjectBuilder(token);
 	}
 
 	private void addValidForNoSecondsToJson(JsonArrayBuilder userChildren) {
@@ -72,10 +71,10 @@ public final class AuthTokenToJsonConverter {
 		userChildren.addJsonObjectBuilder(idInUserStorage);
 	}
 
-	private void addIdFromLoginToJson(JsonArrayBuilder userChildren) {
-		JsonObjectBuilder idFromLogin = createObjectBuilderWithName("idFromLogin");
-		idFromLogin.addKeyString(VALUE, String.valueOf(authToken.idFromLogin));
-		userChildren.addJsonObjectBuilder(idFromLogin);
+	private void addLoginIdToJson(JsonArrayBuilder userChildren) {
+		JsonObjectBuilder loginId = createObjectBuilderWithName("loginId");
+		loginId.addKeyString(VALUE, String.valueOf(authToken.loginId));
+		userChildren.addJsonObjectBuilder(loginId);
 	}
 
 	private void possiblyAddNameToJson(JsonArrayBuilder userChildren) {

@@ -85,7 +85,7 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private AuthToken createAuthTokenUsingPickedUserAndGeneratedAuthToken(User pickedUser,
 			String generatedAuthToken) {
-		AuthToken authToken = AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(
+		AuthToken authToken = AuthToken.withTokenAndValidForNoSecondsAndIdInUserStorageAndLoginId(
 				generatedAuthToken, VALID_FOR_NO_SECONDS, pickedUser.id, pickedUser.loginId);
 		setNamesInAuthToken(pickedUser, authToken);
 		return authToken;

@@ -62,7 +62,7 @@ public final class JsonToUserInfoConverter {
 		if (idInUserStorageIsSet(childValues)) {
 			return UserInfo.withIdInUserStorage(childValues.get(ID_IN_USER_STORAGE));
 		}
-		return UserInfo.withLoginIdAndLoginDomain(childValues.get("idFromLogin"),
+		return UserInfo.withLoginIdAndLoginDomain(childValues.get("loginId"),
 				childValues.get("domainFromLogin"));
 	}
 

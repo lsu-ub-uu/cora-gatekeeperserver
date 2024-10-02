@@ -95,7 +95,7 @@ public class GatekeeperTest {
 		assertNotNull(authToken.token);
 		assertEquals(authToken.validForNoSeconds, 600);
 		assertSame(authToken.idInUserStorage, pickedUser.id);
-		assertSame(authToken.idFromLogin, pickedUser.loginId);
+		assertSame(authToken.loginId, pickedUser.loginId);
 		assertSame(authToken.firstName, pickedUser.firstName);
 		assertSame(authToken.lastName, pickedUser.lastName);
 	}
@@ -119,7 +119,7 @@ public class GatekeeperTest {
 		assertNotNull(authToken.token);
 		assertEquals(authToken.validForNoSeconds, 600);
 		assertSame(authToken.idInUserStorage, pickedUser.id);
-		assertSame(authToken.idFromLogin, pickedUser.loginId);
+		assertSame(authToken.loginId, pickedUser.loginId);
 		assertNull(authToken.firstName);
 		assertNull(authToken.lastName);
 	}
