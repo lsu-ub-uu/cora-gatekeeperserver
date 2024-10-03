@@ -203,7 +203,8 @@ public class GatekeeperTest {
 	public void testRemoveAuthTokenForUser_removesAccess() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		User logedInUser = gatekeeper.getUserForToken(authToken.token);
-		gatekeeper.removeAuthTokenForUser(authToken.token, logedInUser.id);
+
+		gatekeeper.removeAuthTokenForUser(authToken.token, logedInUser.loginId);
 
 		try {
 			gatekeeper.getUserForToken(authToken.token);

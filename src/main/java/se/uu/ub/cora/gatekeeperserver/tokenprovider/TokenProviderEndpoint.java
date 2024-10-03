@@ -62,11 +62,10 @@ public final class TokenProviderEndpoint {
 	}
 
 	@DELETE
-	@Path("{userid}")
-	public Response removeAuthTokenForUser(String authToken,
-			@PathParam("userid") String idInUserStorage) {
+	@Path("{loginId}")
+	public Response removeAuthTokenForUser(String authToken, @PathParam("loginId") String loginId) {
 		try {
-			return tryToRemoveAuthTokenForUser(authToken, idInUserStorage);
+			return tryToRemoveAuthTokenForUser(authToken, loginId);
 		} catch (AuthenticationException e) {
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}

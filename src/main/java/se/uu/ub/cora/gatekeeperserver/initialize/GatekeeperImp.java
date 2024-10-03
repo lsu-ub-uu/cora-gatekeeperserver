@@ -105,9 +105,9 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	@Override
-	public void removeAuthTokenForUser(String authTokenId, String idInUserStorage) {
+	public void removeAuthTokenForUser(String authTokenId, String loginId) {
 		throwErrorIfAuthTokenDoesNotExists(authTokenId);
-		removeAuthTokenIfUserIdMatches(authTokenId, idInUserStorage);
+		removeAuthTokenIfUserIdMatches(authTokenId, loginId);
 	}
 
 	private void throwErrorIfAuthTokenDoesNotExists(String authTokenId) {
@@ -116,20 +116,20 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	private void removeAuthTokenIfUserIdMatches(String authTokenId, String idInUserStorage) {
-		ensureUserIdMatchesTokensUserId(authTokenId, idInUserStorage);
+	private void removeAuthTokenIfUserIdMatches(String authTokenId, String loginId) {
+		ensureUserIdMatchesTokensUserId(authTokenId, loginId);
 		pickedUsers.remove(authTokenId);
 	}
 
-	private void ensureUserIdMatchesTokensUserId(String authTokenId, String idInUserStorage) {
+	private void ensureUserIdMatchesTokensUserId(String authTokenId, String loginId) {
 		User storedUser = pickedUsers.get(authTokenId);
-		if (!userInfoLoginIdEqualsStoredLoginId(idInUserStorage, storedUser)) {
+		if (!userInfoLoginIdEqualsStoredLoginId(loginId, storedUser)) {
 			throw new AuthenticationException("idInUserStorage does not exist");
 		}
 	}
 
-	private boolean userInfoLoginIdEqualsStoredLoginId(String idInUserStorage, User storedUser) {
-		return storedUser.id.equals(idInUserStorage);
+	private boolean userInfoLoginIdEqualsStoredLoginId(String loginId, User storedUser) {
+		return storedUser.loginId.equals(loginId);
 	}
 
 }

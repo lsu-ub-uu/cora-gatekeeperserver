@@ -78,7 +78,6 @@ public class TokenProviderEndpointTest {
 
 	@Test
 	public void testNonUserInfoWithProblem() {
-		// someLoginIdWithProblem
 		String jsonUserInfo = "{\"children\":["
 				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
@@ -90,16 +89,16 @@ public class TokenProviderEndpointTest {
 	@Test
 	public void testRemoveAuthTokenForUser() {
 		String authToken = "someAuthToken";
-		String idInUserStorage = "someId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, idInUserStorage);
+		String loginId = "someLoginId";
+		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, loginId);
 		assertResponseStatusIs(Response.Status.OK);
 	}
 
 	@Test
 	public void testRemoveAuthTokenForUserWithProblem() {
 		String authToken = "someNonExistingAuthToken";
-		String idInUserStorage = "someId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, idInUserStorage);
+		String loginId = "someLoginId";
+		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, loginId);
 		assertResponseStatusIs(Response.Status.NOT_FOUND);
 	}
 }
