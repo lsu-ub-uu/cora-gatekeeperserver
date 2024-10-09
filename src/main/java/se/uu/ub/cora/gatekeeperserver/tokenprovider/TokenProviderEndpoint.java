@@ -44,9 +44,7 @@ public final class TokenProviderEndpoint {
 	private Response tryToGetAuthTokenForUserInfo(String jsonUserInfo) {
 		Gatekeeper gatekeeper = GatekeeperInstanceProvider.getGatekeeper();
 		UserInfo userInfo = convertJsonToUserInfo(jsonUserInfo);
-
 		AuthToken authTokenForUserInfo = gatekeeper.getAuthTokenForUserInfo(userInfo);
-
 		String json = convertAuthTokenToJson(authTokenForUserInfo);
 		return Response.status(Response.Status.OK).entity(json).build();
 	}
@@ -62,18 +60,18 @@ public final class TokenProviderEndpoint {
 	}
 
 	@DELETE
-	@Path("{loginId}")
-	public Response removeAuthTokenForUser(String authToken, @PathParam("loginId") String loginId) {
+	@Path("{tokenId}")
+	public Response removeAuthToken(@PathParam("tokenId") String tokenId, String authToken) {
 		try {
-			return tryToRemoveAuthTokenForUser(authToken, loginId);
+			return tryToRemoveAuthToken(tokenId, authToken);
 		} catch (AuthenticationException e) {
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}
 	}
 
-	private Response tryToRemoveAuthTokenForUser(String authToken, String idInUserStorage) {
+	private Response tryToRemoveAuthToken(String tokenId, String authToken) {
 		Gatekeeper gatekeeper = GatekeeperInstanceProvider.getGatekeeper();
-		gatekeeper.removeAuthTokenForUser(authToken, idInUserStorage);
+		gatekeeper.removeAuthToken(tokenId, authToken);
 		return Response.status(Response.Status.OK).build();
 	}
 }

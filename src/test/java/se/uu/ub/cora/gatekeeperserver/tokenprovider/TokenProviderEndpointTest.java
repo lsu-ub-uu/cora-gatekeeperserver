@@ -62,6 +62,7 @@ public class TokenProviderEndpointTest {
 		assertResponseStatusIs(Response.Status.OK);
 		assertEntityExists();
 		String expected = "{\"children\":[" + "{\"name\":\"token\",\"value\":\"someAuthToken\"},"
+				+ "{\"name\":\"tokenId\",\"value\":\"someTokenId\"},"
 				+ "{\"name\":\"validForNoSeconds\",\"value\":\"600\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
 				+ "{\"name\":\"loginId\",\"value\":\"someloginId\"}" + "],\"name\":\"authToken\"}";
@@ -89,16 +90,16 @@ public class TokenProviderEndpointTest {
 	@Test
 	public void testRemoveAuthTokenForUser() {
 		String authToken = "someAuthToken";
-		String loginId = "someLoginId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, loginId);
+		String tokenId = "someTokenId";
+		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
 		assertResponseStatusIs(Response.Status.OK);
 	}
 
 	@Test
 	public void testRemoveAuthTokenForUserWithProblem() {
 		String authToken = "someNonExistingAuthToken";
-		String loginId = "someLoginId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, loginId);
+		String tokenId = "someTokenId";
+		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
 		assertResponseStatusIs(Response.Status.NOT_FOUND);
 	}
 }

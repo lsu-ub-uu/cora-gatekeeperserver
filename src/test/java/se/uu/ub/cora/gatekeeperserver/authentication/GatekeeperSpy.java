@@ -19,6 +19,8 @@
 
 package se.uu.ub.cora.gatekeeperserver.authentication;
 
+import java.util.Optional;
+
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
@@ -54,13 +56,13 @@ public class GatekeeperSpy implements Gatekeeper {
 			throw new AuthenticationException("problem getting authToken for userInfo");
 		}
 		getAuthTokenForUserInfoWasCalled = true;
-		return AuthToken.withTokenAndValidForNoSecondsAndIdInUserStorageAndLoginId("someAuthToken",
-				600, "someIdFromStorage", "someloginId");
+		return new AuthToken("someAuthToken", "someTokenId", 600, "someIdFromStorage",
+				"someloginId", Optional.empty(), Optional.empty());
 	}
 
 	@Override
-	public void removeAuthTokenForUser(String authTokenId, String loginId) {
-		if ("someNonExistingAuthToken".equals(authTokenId)) {
+	public void removeAuthToken(String tokenId, String authToken) {
+		if ("someNonExistingAuthToken".equals(authToken)) {
 			throw new AuthenticationException("authToken does not exist");
 		}
 	}

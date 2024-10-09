@@ -21,6 +21,7 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
@@ -35,7 +36,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	INSTANCE;
 
 	private static final int VALID_FOR_NO_SECONDS = 600;
-	private Map<String, User> pickedUsers = new HashMap<>();
+	private Map<String, Authentication> authentications = new HashMap<>();
 
 	@Override
 	public User getUserForToken(String authToken) {
@@ -56,13 +57,14 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private void throwErrorIfInvalidToken(String authToken) {
-		if (!pickedUsers.containsKey(authToken)) {
+		if (!authentications.containsKey(authToken)) {
 			throw new AuthenticationException("token not valid");
 		}
 	}
 
 	private User getAuthenticatedUser(String authToken) {
-		return pickedUsers.get(authToken);
+		Authentication authentication = authentications.get(authToken);
+		return authentication.user();
 	}
 
 	@Override
@@ -78,58 +80,49 @@ public enum GatekeeperImp implements Gatekeeper {
 	private AuthToken tryToGetAuthTokenForUserInfo(UserInfo userInfo) {
 		UserPicker userPicker = UserPickerProvider.getUserPicker();
 		User pickedUser = userPicker.pickUser(userInfo);
-		String generatedAuthToken = generateAuthToken();
-		pickedUsers.put(generatedAuthToken, pickedUser);
-		return createAuthTokenUsingPickedUserAndGeneratedAuthToken(pickedUser, generatedAuthToken);
+		String generatedToken = generateRandomUUID();
+		String generatedTokenId = generateRandomUUID();
+		Authentication createdAuthentication = new Authentication(generatedTokenId, pickedUser);
+		authentications.put(generatedToken, createdAuthentication);
+		return createAuthTokenUsingPickedUserAndTokenAndTokenId(pickedUser, generatedToken,
+				generatedTokenId);
 	}
 
-	private AuthToken createAuthTokenUsingPickedUserAndGeneratedAuthToken(User pickedUser,
-			String generatedAuthToken) {
-		AuthToken authToken = AuthToken.withTokenAndValidForNoSecondsAndIdInUserStorageAndLoginId(
-				generatedAuthToken, VALID_FOR_NO_SECONDS, pickedUser.id, pickedUser.loginId);
-		setNamesInAuthToken(pickedUser, authToken);
-		return authToken;
+	private AuthToken createAuthTokenUsingPickedUserAndTokenAndTokenId(User pickedUser,
+			String token, String tokenId) {
+		return new AuthToken(token, tokenId, VALID_FOR_NO_SECONDS, pickedUser.id,
+				pickedUser.loginId, Optional.ofNullable(pickedUser.firstName),
+				Optional.ofNullable(pickedUser.lastName));
 	}
 
-	private void setNamesInAuthToken(User pickedUser, AuthToken authToken) {
-		if (pickedUser.firstName != null) {
-			authToken.firstName = pickedUser.firstName;
-		}
-		if (pickedUser.lastName != null) {
-			authToken.lastName = pickedUser.lastName;
-		}
-	}
-
-	private String generateAuthToken() {
+	private String generateRandomUUID() {
 		return UUID.randomUUID().toString();
 	}
 
 	@Override
-	public void removeAuthTokenForUser(String authTokenId, String loginId) {
-		throwErrorIfAuthTokenDoesNotExists(authTokenId);
-		removeAuthTokenIfUserIdMatches(authTokenId, loginId);
+	public void removeAuthToken(String tokenId, String token) {
+		throwErrorIfAuthTokenDoesNotExists(token);
+		removeAuthTokenIfUserIdMatches(token, tokenId);
 	}
 
-	private void throwErrorIfAuthTokenDoesNotExists(String authTokenId) {
-		if (!pickedUsers.containsKey(authTokenId)) {
+	private void throwErrorIfAuthTokenDoesNotExists(String token) {
+		if (!authentications.containsKey(token)) {
 			throw new AuthenticationException("AuthToken does not exist");
 		}
 	}
 
-	private void removeAuthTokenIfUserIdMatches(String authTokenId, String loginId) {
-		ensureUserIdMatchesTokensUserId(authTokenId, loginId);
-		pickedUsers.remove(authTokenId);
+	private void removeAuthTokenIfUserIdMatches(String token, String tokenId) {
+		ensureUserIdMatchesTokensUserId(token, tokenId);
+		authentications.remove(token);
 	}
 
-	private void ensureUserIdMatchesTokensUserId(String authTokenId, String loginId) {
-		User storedUser = pickedUsers.get(authTokenId);
-		if (!userInfoLoginIdEqualsStoredLoginId(loginId, storedUser)) {
-			throw new AuthenticationException("idInUserStorage does not exist");
+	private void ensureUserIdMatchesTokensUserId(String token, String tokenId) {
+		Authentication authentication = authentications.get(token);
+		if (!tokenId.equals(authentication.tokenId())) {
+			throw new AuthenticationException("TokenId does not exists");
 		}
 	}
 
-	private boolean userInfoLoginIdEqualsStoredLoginId(String loginId, User storedUser) {
-		return storedUser.loginId.equals(loginId);
+	record Authentication(String tokenId, User user) {
 	}
-
 }
