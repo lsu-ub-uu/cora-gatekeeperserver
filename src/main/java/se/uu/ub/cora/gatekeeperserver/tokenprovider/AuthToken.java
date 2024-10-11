@@ -19,25 +19,9 @@
 
 package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
-public final class AuthToken {
+import java.util.Optional;
 
-	public final String token;
-	public final int validForNoSeconds;
-	public final String idInUserStorage;
-	public final String idFromLogin;
-	public String firstName;
-	public String lastName;
-
-	private AuthToken(String id, int validForNoSeconds, String idInUserStorage, String idFromLogin) {
-		this.token = id;
-		this.validForNoSeconds = validForNoSeconds;
-		this.idInUserStorage = idInUserStorage;
-		this.idFromLogin = idFromLogin;
-	}
-
-	public static AuthToken withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(String id,
-			int validForNoSeconds, String idInUserStorage, String idFromLogin) {
-		return new AuthToken(id, validForNoSeconds, idInUserStorage, idFromLogin);
-	}
-
+public final record AuthToken(String token, String tokenId, int validForNoSeconds,
+		String idInUserStorage, String loginId, Optional<String> firstName,
+		Optional<String> lastName) {
 }

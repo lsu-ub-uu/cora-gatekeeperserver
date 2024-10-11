@@ -35,13 +35,13 @@ public class UserPickerSpy implements UserPicker {
 		if (null != userInfo.idInUserStorage) {
 			return fakeUserFromStorage(userInfo);
 		}
-		if (userInfo.idFromLogin != null && userInfo.idFromLogin.equals("someLoginIdWithProblem")) {
+		if (userInfo.loginId != null && userInfo.loginId.equals("someLoginIdWithProblem")) {
 			throw new RuntimeException("problem finding user");
 		}
 		usedUserInfo = userInfo;
 		userPickerWasCalled = true;
 		User user = new User("12345");
-		user.loginId = userInfo.idFromLogin;
+		user.loginId = userInfo.loginId;
 		user.loginDomain = userInfo.domainFromLogin;
 		returnedUser = user;
 		return user;

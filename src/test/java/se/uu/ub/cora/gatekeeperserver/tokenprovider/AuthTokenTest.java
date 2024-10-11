@@ -20,21 +20,52 @@
 package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
+import java.util.Optional;
 
 import org.testng.annotations.Test;
 
 public class AuthTokenTest {
 	@Test
-	public void test() {
-		String id = "someId";
+	public void authTokenWithoutNames() {
+		String token = "someToken";
+		String tokenId = "someTokenId";
 		int validForNoSeconds = 600;
 		String idInUserStorage = "141414";
-		String idFromLogin = "someIdFromLogin";
-		AuthToken authToken = AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(id,
-				validForNoSeconds, idInUserStorage, idFromLogin);
-		assertEquals(authToken.token, "someId");
-		assertEquals(authToken.validForNoSeconds, 600);
-		assertEquals(authToken.idInUserStorage, "141414");
-		assertEquals(authToken.idFromLogin, "someIdFromLogin");
+		String loginId = "loginId";
+
+		AuthToken authToken = new AuthToken(token, tokenId, validForNoSeconds, idInUserStorage,
+				loginId, Optional.empty(), Optional.empty());
+
+		assertEquals(authToken.token(), token);
+		assertEquals(authToken.tokenId(), tokenId);
+		assertEquals(authToken.validForNoSeconds(), validForNoSeconds);
+		assertEquals(authToken.idInUserStorage(), idInUserStorage);
+		assertEquals(authToken.loginId(), loginId);
+		assertTrue(authToken.firstName().isEmpty());
+		assertTrue(authToken.lastName().isEmpty());
+	}
+
+	@Test
+	public void authTokenWithFirstAndLastName() {
+		String token = "someToken";
+		String tokenId = "someTokenId";
+		int validForNoSeconds = 600;
+		String idInUserStorage = "141414";
+		String loginId = "loginId";
+		String firstname = "someFirstName";
+		String lastname = "someLastName";
+
+		AuthToken authToken = new AuthToken(token, tokenId, validForNoSeconds, idInUserStorage,
+				loginId, Optional.of(firstname), Optional.of(lastname));
+
+		assertEquals(authToken.token(), token);
+		assertEquals(authToken.tokenId(), tokenId);
+		assertEquals(authToken.validForNoSeconds(), validForNoSeconds);
+		assertEquals(authToken.idInUserStorage(), idInUserStorage);
+		assertEquals(authToken.loginId(), loginId);
+		assertEquals(authToken.firstName().get(), firstname);
+		assertEquals(authToken.lastName().get(), lastname);
 	}
 }

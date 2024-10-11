@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -42,7 +42,7 @@ public class TokenProviderEndpointTest {
 		locator = new GateKeeperLocatorSpy();
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		tokenProviderEndpoint = new TokenProviderEndpoint();
-		jsonUserInfo = "{\"children\":[" + "{\"name\":\"idFromLogin\",\"value\":\"\"},"
+		jsonUserInfo = "{\"children\":[" + "{\"name\":\"loginId\",\"value\":\"\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"131313\"}"
 				+ "],\"name\":\"userInfo\"}";
@@ -61,11 +61,11 @@ public class TokenProviderEndpointTest {
 
 		assertResponseStatusIs(Response.Status.OK);
 		assertEntityExists();
-		String expected = "{\"children\":[" + "{\"name\":\"id\",\"value\":\"someAuthToken\"},"
+		String expected = "{\"children\":[" + "{\"name\":\"token\",\"value\":\"someAuthToken\"},"
+				+ "{\"name\":\"tokenId\",\"value\":\"someTokenId\"},"
 				+ "{\"name\":\"validForNoSeconds\",\"value\":\"600\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someIdFromLogin\"}"
-				+ "],\"name\":\"authToken\"}";
+				+ "{\"name\":\"loginId\",\"value\":\"someloginId\"}" + "],\"name\":\"authToken\"}";
 		assertEquals(response.getEntity(), expected);
 	}
 
@@ -79,9 +79,8 @@ public class TokenProviderEndpointTest {
 
 	@Test
 	public void testNonUserInfoWithProblem() {
-		// someLoginIdWithProblem
 		String jsonUserInfo = "{\"children\":["
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someLoginIdWithProblem\"},"
+				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"\"}" + "],\"name\":\"userInfo\"}";
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
@@ -91,16 +90,16 @@ public class TokenProviderEndpointTest {
 	@Test
 	public void testRemoveAuthTokenForUser() {
 		String authToken = "someAuthToken";
-		String idInUserStorage = "someId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, idInUserStorage);
+		String tokenId = "someTokenId";
+		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
 		assertResponseStatusIs(Response.Status.OK);
 	}
 
 	@Test
 	public void testRemoveAuthTokenForUserWithProblem() {
 		String authToken = "someNonExistingAuthToken";
-		String idInUserStorage = "someId";
-		response = tokenProviderEndpoint.removeAuthTokenForUser(authToken, idInUserStorage);
+		String tokenId = "someTokenId";
+		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
 		assertResponseStatusIs(Response.Status.NOT_FOUND);
 	}
 }

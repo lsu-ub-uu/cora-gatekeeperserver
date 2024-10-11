@@ -21,37 +21,90 @@ package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
 import static org.testng.Assert.assertEquals;
 
+import java.util.Optional;
+
 import org.testng.annotations.Test;
 
 public class AuthTokenToJsonConverterTest {
 	@Test
 	public void testAuthTokenToJsonConverter() {
-		AuthToken authToken = AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(
-				"someId", 599, "someIdFromStorage", "someIdFromLogin");
+		AuthToken authToken = new AuthToken("someToken", "someTokenId", 599, "someIdFromStorage",
+				"loginId", Optional.empty(), Optional.empty());
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
-		String expected = "{\"children\":[" + "{\"name\":\"id\",\"value\":\"someId\"},"
-				+ "{\"name\":\"validForNoSeconds\",\"value\":\"599\"}," + "{"
-				+ "\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someIdFromLogin\"}"
-				+ "],\"name\":\"authToken\"}";
-		assertEquals(json, expected);
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "name": "token",
+				      "value": "someToken"
+				    },
+				    {
+				      "name": "tokenId",
+				      "value": "someTokenId"
+				    },
+				    {
+				      "name": "validForNoSeconds",
+				      "value": "599"
+				    },
+				    {
+				      "name": "idInUserStorage",
+				      "value": "someIdFromStorage"
+				    },
+				    {
+				      "name": "loginId",
+				      "value": "loginId"
+				    }
+				  ],
+				  "name": "authToken"
+				}""";
+		assertEquals(json, compactString(expected));
+	}
+
+	private String compactString(String string) {
+		return string.trim().replace("\n", "").replace("\s", "");
 	}
 
 	@Test
 	public void testAuthTokenToJsonConverterWithName() {
-		AuthToken authToken = AuthToken.withIdAndValidForNoSecondsAndIdInUserStorageAndIdFromLogin(
-				"someId", 599, "someIdFromStorage", "someIdFromLogin");
-		authToken.firstName = "someFirstName";
-		authToken.lastName = "someLastName";
+		AuthToken authToken = new AuthToken("someToken", "someTokenId", 599, "someIdFromStorage",
+				"loginId", Optional.of("someFirstName"), Optional.of("someLastName"));
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
-		String expected = "{\"children\":[" + "{\"name\":\"id\",\"value\":\"someId\"},"
-				+ "{\"name\":\"validForNoSeconds\",\"value\":\"599\"}," + "{"
-				+ "\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
-				+ "{\"name\":\"idFromLogin\",\"value\":\"someIdFromLogin\"},"
-				+ "{\"name\":\"firstName\",\"value\":\"someFirstName\"},"
-				+ "{\"name\":\"lastName\",\"value\":\"someLastName\"}" + "],\"name\":\"authToken\"}";
-		assertEquals(json, expected);
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "name": "token",
+				      "value": "someToken"
+				    },
+				    {
+				      "name": "tokenId",
+				      "value": "someTokenId"
+				    },
+				    {
+				      "name": "validForNoSeconds",
+				      "value": "599"
+				    },
+				    {
+				      "name": "idInUserStorage",
+				      "value": "someIdFromStorage"
+				    },
+				    {
+				      "name": "loginId",
+				      "value": "loginId"
+				    },
+				    {
+				      "name": "firstName",
+				      "value": "someFirstName"
+				    },
+				    {
+				      "name": "lastName",
+				      "value": "someLastName"
+				    }
+				  ],
+				  "name": "authToken"
+				}""";
+		assertEquals(json, compactString(expected));
 	}
 }

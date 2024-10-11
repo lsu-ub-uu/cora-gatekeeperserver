@@ -21,18 +21,17 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
-import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
-import se.uu.ub.cora.gatekeeper.picker.UserPicker;
 import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
@@ -92,12 +91,13 @@ public class GatekeeperTest {
 
 		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
 
-		assertNotNull(authToken.token);
-		assertEquals(authToken.validForNoSeconds, 600);
-		assertSame(authToken.idInUserStorage, pickedUser.id);
-		assertSame(authToken.idFromLogin, pickedUser.loginId);
-		assertSame(authToken.firstName, pickedUser.firstName);
-		assertSame(authToken.lastName, pickedUser.lastName);
+		assertTokenHasUUIDFormat(authToken.token());
+		assertTokenHasUUIDFormat(authToken.tokenId());
+		assertEquals(authToken.validForNoSeconds(), 600);
+		assertSame(authToken.idInUserStorage(), pickedUser.id);
+		assertSame(authToken.loginId(), pickedUser.loginId);
+		assertSame(authToken.firstName().get(), pickedUser.firstName);
+		assertSame(authToken.lastName().get(), pickedUser.lastName);
 	}
 
 	private User assertAndReturnPickUserWasUsed(UserInfo userInfo) {
@@ -115,20 +115,29 @@ public class GatekeeperTest {
 		setUserToReturnFromUserProviderSpy(user);
 
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+
 		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
-		assertNotNull(authToken.token);
-		assertEquals(authToken.validForNoSeconds, 600);
-		assertSame(authToken.idInUserStorage, pickedUser.id);
-		assertSame(authToken.idFromLogin, pickedUser.loginId);
-		assertNull(authToken.firstName);
-		assertNull(authToken.lastName);
+		assertTokenHasUUIDFormat(authToken.token());
+		assertTokenHasUUIDFormat(authToken.tokenId());
+		assertEquals(authToken.validForNoSeconds(), 600);
+		assertSame(authToken.idInUserStorage(), pickedUser.id);
+		assertSame(authToken.loginId(), pickedUser.loginId);
+		assertTrue(authToken.firstName().isEmpty());
+		assertTrue(authToken.lastName().isEmpty());
+	}
+
+	private void assertTokenHasUUIDFormat(String token) {
+		String regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(token);
+		assertTrue(matcher.matches());
 	}
 
 	private void setUserToReturnFromUserProviderSpy(User user) {
 		UserPickerSpy userPicker = new UserPickerSpy();
-		userPicker.MRV.setDefaultReturnValuesSupplier("pickUser", (Supplier<User>) () -> user);
+		userPicker.MRV.setDefaultReturnValuesSupplier("pickUser", () -> user);
 		userPickerInstanceProvider.MRV.setDefaultReturnValuesSupplier("getUserPicker",
-				(Supplier<UserPicker>) () -> userPicker);
+				() -> userPicker);
 	}
 
 	@Test
@@ -154,12 +163,12 @@ public class GatekeeperTest {
 		UserPickerSpy userPicker = new UserPickerSpy();
 		userPicker.MRV.setAlwaysThrowException("pickUser", errorToThrow);
 		userPickerInstanceProvider.MRV.setDefaultReturnValuesSupplier("getUserPicker",
-				(Supplier<UserPicker>) () -> userPicker);
+				() -> userPicker);
 		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
 				"someLoginDomain");
 		try {
 			gatekeeper.getAuthTokenForUserInfo(userInfo);
-			assertTrue(false);
+			fail("it should throw AuthenticationException");
 		} catch (Exception e) {
 			assertTrue(e instanceof AuthenticationException);
 			assertEquals(e.getMessage(), "Could not pick user for userInfo, with error: "
@@ -173,7 +182,7 @@ public class GatekeeperTest {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 
 		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
-		User logedInUser = gatekeeper.getUserForToken(authToken.token);
+		User logedInUser = gatekeeper.getUserForToken(authToken.token());
 		assertSame(logedInUser, pickedUser);
 	}
 
@@ -182,31 +191,31 @@ public class GatekeeperTest {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		AuthToken authToken2 = gatekeeper.getAuthTokenForUserInfo(userInfo);
 
-		assertNotEquals(authToken.token, authToken2.token);
+		assertNotEquals(authToken.token(), authToken2.token());
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "AuthToken does not exist")
 	public void testRemoveAuthTokenForUserTokenDoesNotExist() {
-		gatekeeper.removeAuthTokenForUser("someNonExistingToken", "someLoginId");
+		gatekeeper.removeAuthToken("someLoginId", "someNonExistingToken");
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
-			+ "idInUserStorage does not exist")
+			+ "TokenId does not exists")
 	public void testRemoveAuthTokenForUserFailsIfWrongUserId() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-		gatekeeper.getUserForToken(authToken.token);
-		gatekeeper.removeAuthTokenForUser(authToken.token, "notCorrectUserId");
+		gatekeeper.getUserForToken(authToken.token());
+		gatekeeper.removeAuthToken("anotherTokenId", authToken.token());
 	}
 
 	@Test
 	public void testRemoveAuthTokenForUser_removesAccess() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
-		User logedInUser = gatekeeper.getUserForToken(authToken.token);
-		gatekeeper.removeAuthTokenForUser(authToken.token, logedInUser.id);
+
+		gatekeeper.removeAuthToken(authToken.tokenId(), authToken.token());
 
 		try {
-			gatekeeper.getUserForToken(authToken.token);
+			gatekeeper.getUserForToken(authToken.token());
 			assertTrue(false);
 		} catch (Exception e) {
 			assertTrue(e instanceof AuthenticationException);
