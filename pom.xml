@@ -14,38 +14,35 @@
 	<parent>
 		<groupId>se.uu.ub.cora</groupId>
 		<artifactId>cora-parent</artifactId>
-		<version>2.5.0</version>
+		<version>2.6.0</version>
 	</parent>
 
 	<artifactId>gatekeeperserver</artifactId>
 	<version>6.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	
 
 	<name>gatekeeperserver</name>
 
 	<properties>
 		<logger.version>2.10.0</logger.version>
-		
-		<gatekeeper.version>5.0-SNAPSHOT</gatekeeper.version>
-<!--		<coradata.version>7.1.0</coradata.version>-->
+		<gatekeeper.version>5.0.0</gatekeeper.version>
 		<json.version>3.10.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jaxb-api.version>2.3.1</jaxb-api.version>
 		<servlet-api.version>5.0.0</servlet-api.version>
 		<initialize.version>1.6.0</initialize.version>
 		<initialize-spies.version>1.6.0</initialize-spies.version>
-		<testutils.version>1.11.0</testutils.version>
+		<testutils.version>1.14.0</testutils.version>
 		<logger-spies.version>1.5.0</logger-spies.version>
-		<jersey.version>3.1.5</jersey.version>
+		<jersey.version>3.1.9</jersey.version>
 	</properties>
 
 	<scm>
 		<connection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</connection>
 		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</developerConnection>
 		<url>https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</url>
-	  <tag>release/1.2</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 
 	<dependencies>
@@ -61,19 +58,12 @@
 			<version>${gatekeeper.version}</version>
 			<scope>provided</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>se.uu.ub.cora</groupId>-->
-<!--			<artifactId>coradata</artifactId>-->
-<!--			<version>${coradata.version}</version>-->
-<!--			<scope>provided</scope>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>se.uu.ub.cora</groupId>
 			<artifactId>json</artifactId>
 			<version>${json.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		
 		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
