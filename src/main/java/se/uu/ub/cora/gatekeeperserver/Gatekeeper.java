@@ -21,13 +21,32 @@ package se.uu.ub.cora.gatekeeperserver;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
+import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public interface Gatekeeper {
 
+	/**
+	 * getUserForToken returns the User related to the given authToken. If the authToken is not
+	 * valid an {@link AuthenticationException} is thrown.
+	 * 
+	 * @param authToken
+	 * @return If the auhToken is valid then it returns the {@link User} related to the authToken
+	 */
 	User getUserForToken(String authToken);
 
+	/**
+	 * 
+	 * @param userInfo
+	 * @return
+	 */
 	AuthToken getAuthTokenForUserInfo(UserInfo userInfo);
 
+	/**
+	 * removeAuthToken removes authtoken from gatekeeper
+	 * 
+	 * @param tokenId
+	 * @param authToken
+	 */
 	void removeAuthToken(String tokenId, String authToken);
 }
