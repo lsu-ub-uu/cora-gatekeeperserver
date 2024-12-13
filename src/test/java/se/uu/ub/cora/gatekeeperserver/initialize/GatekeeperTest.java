@@ -97,7 +97,7 @@ public class GatekeeperTest {
 		assertTokenHasUUIDFormat(authToken.token());
 		assertTokenHasUUIDFormat(authToken.tokenId());
 		assertTimestamp(authToken.validUntil(), VALID_UNTIL_NO_MILLIS);
-		assertTimestamp(authToken.renewableUntil(), RENEW_UNTIL_NO_MILLIS);
+		assertTimestamp(authToken.renewUntil(), RENEW_UNTIL_NO_MILLIS);
 		assertSame(authToken.idInUserStorage(), pickedUser.id);
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertSame(authToken.firstName().get(), pickedUser.firstName);
@@ -132,7 +132,7 @@ public class GatekeeperTest {
 		assertTokenHasUUIDFormat(authToken.token());
 		assertTokenHasUUIDFormat(authToken.tokenId());
 		assertTimestamp(authToken.validUntil(), VALID_UNTIL_NO_MILLIS);
-		assertTimestamp(authToken.renewableUntil(), RENEW_UNTIL_NO_MILLIS);
+		assertTimestamp(authToken.renewUntil(), RENEW_UNTIL_NO_MILLIS);
 		assertSame(authToken.idInUserStorage(), pickedUser.id);
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertTrue(authToken.firstName().isEmpty());

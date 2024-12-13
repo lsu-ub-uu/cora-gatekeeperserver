@@ -64,7 +64,7 @@ public class TokenProviderEndpointTest {
 		String expected = "{\"children\":[" + "{\"name\":\"token\",\"value\":\"someAuthToken\"},"
 				+ "{\"name\":\"tokenId\",\"value\":\"someTokenId\"},"
 				+ "{\"name\":\"validUntil\",\"value\":\"100\"},"
-				+ "{\"name\":\"renewableUntil\",\"value\":\"200\"},"
+				+ "{\"name\":\"renewUntil\",\"value\":\"200\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
 				+ "{\"name\":\"loginId\",\"value\":\"someloginId\"}" + "],\"name\":\"authToken\"}";
 		assertEquals(response.getEntity(), expected);

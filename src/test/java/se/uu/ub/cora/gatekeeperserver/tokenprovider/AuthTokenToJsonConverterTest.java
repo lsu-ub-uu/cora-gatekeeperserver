@@ -48,7 +48,7 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "100"
 				    },
 				    {
-				      "name": "renewableUntil",
+				      "name": "renewUntil",
 				      "value": "200"
 				    },
 				    {
@@ -92,7 +92,7 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "100"
 				    },
 				    {
-				      "name": "renewableUntil",
+				      "name": "renewUntil",
 				      "value": "200"
 				    },
 				    {

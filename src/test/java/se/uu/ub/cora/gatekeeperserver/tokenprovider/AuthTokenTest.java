@@ -32,17 +32,17 @@ public class AuthTokenTest {
 		String token = "someToken";
 		String tokenId = "someTokenId";
 		long validUntil = 100L;
-		long renewableUntil = 200L;
+		long renewUntil = 200L;
 		String idInUserStorage = "141414";
 		String loginId = "loginId";
 
-		AuthToken authToken = new AuthToken(token, tokenId, validUntil, renewableUntil,
+		AuthToken authToken = new AuthToken(token, tokenId, validUntil, renewUntil,
 				idInUserStorage, loginId, Optional.empty(), Optional.empty());
 
 		assertEquals(authToken.token(), token);
 		assertEquals(authToken.tokenId(), tokenId);
 		assertEquals(authToken.validUntil(), validUntil);
-		assertEquals(authToken.renewableUntil(), renewableUntil);
+		assertEquals(authToken.renewUntil(), renewUntil);
 		assertEquals(authToken.idInUserStorage(), idInUserStorage);
 		assertEquals(authToken.loginId(), loginId);
 		assertTrue(authToken.firstName().isEmpty());
@@ -54,19 +54,19 @@ public class AuthTokenTest {
 		String token = "someToken";
 		String tokenId = "someTokenId";
 		long validUntil = 100L;
-		long renewableUntil = 200L;
+		long renewUntil = 200L;
 		String idInUserStorage = "141414";
 		String loginId = "loginId";
 		String firstname = "someFirstName";
 		String lastname = "someLastName";
 
-		AuthToken authToken = new AuthToken(token, tokenId, validUntil, renewableUntil,
+		AuthToken authToken = new AuthToken(token, tokenId, validUntil, renewUntil,
 				idInUserStorage, loginId, Optional.of(firstname), Optional.of(lastname));
 
 		assertEquals(authToken.token(), token);
 		assertEquals(authToken.tokenId(), tokenId);
 		assertEquals(authToken.validUntil(), validUntil);
-		assertEquals(authToken.renewableUntil(), renewableUntil);
+		assertEquals(authToken.renewUntil(), renewUntil);
 		assertEquals(authToken.idInUserStorage(), idInUserStorage);
 		assertEquals(authToken.loginId(), loginId);
 		assertEquals(authToken.firstName().get(), firstname);
