@@ -63,7 +63,8 @@ public class TokenProviderEndpointTest {
 		assertEntityExists();
 		String expected = "{\"children\":[" + "{\"name\":\"token\",\"value\":\"someAuthToken\"},"
 				+ "{\"name\":\"tokenId\",\"value\":\"someTokenId\"},"
-				+ "{\"name\":\"validForNoSeconds\",\"value\":\"600\"},"
+				+ "{\"name\":\"validUntil\",\"value\":\"100\"},"
+				+ "{\"name\":\"renewableUntil\",\"value\":\"200\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
 				+ "{\"name\":\"loginId\",\"value\":\"someloginId\"}" + "],\"name\":\"authToken\"}";
 		assertEquals(response.getEntity(), expected);

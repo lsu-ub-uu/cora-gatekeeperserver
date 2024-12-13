@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2022 Uppsala University Library
+ * Copyright 2016, 2017, 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -40,6 +40,9 @@ import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
 
 public class GatekeeperTest {
+	private static final long PRECISION = 5000L;
+	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
+	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
 	private UserPickerInstanceProviderSpy userPickerInstanceProvider;
 	private GatekeeperImp gatekeeper;
 	private LoggerFactorySpy loggerFactory;
@@ -93,11 +96,20 @@ public class GatekeeperTest {
 
 		assertTokenHasUUIDFormat(authToken.token());
 		assertTokenHasUUIDFormat(authToken.tokenId());
-		assertEquals(authToken.validForNoSeconds(), 600);
+		assertTimestamp(authToken.validUntil(), VALID_UNTIL_NO_MILLIS);
+		assertTimestamp(authToken.renewableUntil(), RENEW_UNTIL_NO_MILLIS);
 		assertSame(authToken.idInUserStorage(), pickedUser.id);
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertSame(authToken.firstName().get(), pickedUser.firstName);
 		assertSame(authToken.lastName().get(), pickedUser.lastName);
+	}
+
+	private void assertTimestamp(long timestampToValidate, long extraMillis) {
+		long expectedTimestamp = extraMillis + System.currentTimeMillis();
+		long expectedTimestampMinusPresicion = expectedTimestamp - PRECISION;
+		boolean evaluation = (expectedTimestampMinusPresicion <= timestampToValidate)
+				&& (timestampToValidate <= expectedTimestamp);
+		assertTrue(evaluation);
 	}
 
 	private User assertAndReturnPickUserWasUsed(UserInfo userInfo) {
@@ -119,7 +131,8 @@ public class GatekeeperTest {
 		User pickedUser = assertAndReturnPickUserWasUsed(userInfo);
 		assertTokenHasUUIDFormat(authToken.token());
 		assertTokenHasUUIDFormat(authToken.tokenId());
-		assertEquals(authToken.validForNoSeconds(), 600);
+		assertTimestamp(authToken.validUntil(), VALID_UNTIL_NO_MILLIS);
+		assertTimestamp(authToken.renewableUntil(), RENEW_UNTIL_NO_MILLIS);
 		assertSame(authToken.idInUserStorage(), pickedUser.id);
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertTrue(authToken.firstName().isEmpty());
@@ -144,10 +157,10 @@ public class GatekeeperTest {
 	public void testGetAuthTokenWithProblem() {
 		RuntimeException errorToThrow = new RuntimeException();
 		userPickerInstanceProvider.MRV.setAlwaysThrowException("getUserPicker", errorToThrow);
-		UserInfo userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
+		UserInfo specificUserInfo = UserInfo.withLoginIdAndLoginDomain("someLoginIdWithProblem",
 				"someLoginDomain");
 		try {
-			gatekeeper.getAuthTokenForUserInfo(userInfo);
+			gatekeeper.getAuthTokenForUserInfo(specificUserInfo);
 			assertTrue(false);
 		} catch (Exception e) {
 			assertTrue(e instanceof AuthenticationException);

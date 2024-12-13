@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017 Uppsala University Library
+ * Copyright 2016, 2017, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -43,7 +43,8 @@ public final class AuthTokenToJsonConverter {
 
 		addTokenToJson(userChildren);
 		addTokenIdToJson(userChildren);
-		addValidForNoSecondsToJson(userChildren);
+		addValidUntilToJson(userChildren);
+		addRenewableUntilToJson(userChildren);
 		addIdInUserStorageToJson(userChildren);
 		addLoginIdToJson(userChildren);
 		possiblyAddNameToJson(userChildren);
@@ -68,9 +69,15 @@ public final class AuthTokenToJsonConverter {
 		userChildren.addJsonObjectBuilder(token);
 	}
 
-	private void addValidForNoSecondsToJson(JsonArrayBuilder userChildren) {
-		JsonObjectBuilder validForNoSeconds = createObjectBuilderWithName("validForNoSeconds");
-		validForNoSeconds.addKeyString(VALUE, String.valueOf(authToken.validForNoSeconds()));
+	private void addValidUntilToJson(JsonArrayBuilder userChildren) {
+		JsonObjectBuilder validForNoSeconds = createObjectBuilderWithName("validUntil");
+		validForNoSeconds.addKeyString(VALUE, String.valueOf(authToken.validUntil()));
+		userChildren.addJsonObjectBuilder(validForNoSeconds);
+	}
+
+	private void addRenewableUntilToJson(JsonArrayBuilder userChildren) {
+		JsonObjectBuilder validForNoSeconds = createObjectBuilderWithName("renewableUntil");
+		validForNoSeconds.addKeyString(VALUE, String.valueOf(authToken.renewableUntil()));
 		userChildren.addJsonObjectBuilder(validForNoSeconds);
 	}
 

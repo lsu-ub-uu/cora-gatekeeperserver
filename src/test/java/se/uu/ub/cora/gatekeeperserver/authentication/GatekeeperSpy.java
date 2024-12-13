@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -56,7 +56,7 @@ public class GatekeeperSpy implements Gatekeeper {
 			throw new AuthenticationException("problem getting authToken for userInfo");
 		}
 		getAuthTokenForUserInfoWasCalled = true;
-		return new AuthToken("someAuthToken", "someTokenId", 600, "someIdFromStorage",
+		return new AuthToken("someAuthToken", "someTokenId", 100L, 200L, "someIdFromStorage",
 				"someloginId", Optional.empty(), Optional.empty());
 	}
 

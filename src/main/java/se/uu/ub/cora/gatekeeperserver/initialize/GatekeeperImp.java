@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2022 Uppsala University Library
+ * Copyright 2016, 2017, 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -35,7 +35,8 @@ import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 public enum GatekeeperImp implements Gatekeeper {
 	INSTANCE;
 
-	private static final int VALID_FOR_NO_SECONDS = 600;
+	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
+	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
 	private Map<String, Authentication> authentications = new HashMap<>();
 
 	@Override
@@ -90,7 +91,9 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private AuthToken createAuthTokenUsingPickedUserAndTokenAndTokenId(User pickedUser,
 			String token, String tokenId) {
-		return new AuthToken(token, tokenId, VALID_FOR_NO_SECONDS, pickedUser.id,
+		long validUntil = System.currentTimeMillis() + VALID_UNTIL_NO_MILLIS;
+		long renewUntil = System.currentTimeMillis() + RENEW_UNTIL_NO_MILLIS;
+		return new AuthToken(token, tokenId, validUntil, renewUntil, pickedUser.id,
 				pickedUser.loginId, Optional.ofNullable(pickedUser.firstName),
 				Optional.ofNullable(pickedUser.lastName));
 	}
