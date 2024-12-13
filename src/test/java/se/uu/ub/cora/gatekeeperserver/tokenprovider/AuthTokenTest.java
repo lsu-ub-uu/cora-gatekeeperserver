@@ -27,15 +27,12 @@ import java.util.Optional;
 import org.testng.annotations.Test;
 
 public class AuthTokenTest {
-	private static final int VALID_UNTIL_TIME = 600000;
-	private static final int RENEWABLE_UNTIL_TIME = 345600000;
-
 	@Test
 	public void authTokenWithoutNames() {
 		String token = "someToken";
 		String tokenId = "someTokenId";
-		long validUntil = System.currentTimeMillis() + VALID_UNTIL_TIME;
-		long renewableUntil = System.currentTimeMillis() + RENEWABLE_UNTIL_TIME;
+		long validUntil = 100L;
+		long renewableUntil = 200L;
 		String idInUserStorage = "141414";
 		String loginId = "loginId";
 
@@ -56,8 +53,8 @@ public class AuthTokenTest {
 	public void authTokenWithFirstAndLastName() {
 		String token = "someToken";
 		String tokenId = "someTokenId";
-		long validUntil = System.currentTimeMillis() + VALID_UNTIL_TIME;
-		long renewableUntil = System.currentTimeMillis() + RENEWABLE_UNTIL_TIME;
+		long validUntil = 100L;
+		long renewableUntil = 200L;
 		String idInUserStorage = "141414";
 		String loginId = "loginId";
 		String firstname = "someFirstName";
