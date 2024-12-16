@@ -26,12 +26,18 @@ public class GateKeeperLocatorSpy implements GatekeeperLocator {
 
 	public GatekeeperSpy gatekeeperSpy;
 	public boolean gatekeeperLocated = false;
+	private GatekeeperSpy spy;
 
 	@Override
 	public Gatekeeper locateGatekeeper() {
 		gatekeeperLocated = true;
-		gatekeeperSpy = new GatekeeperSpy();
-		return gatekeeperSpy;
+		// gatekeeperSpy = new GatekeeperSpy();
+		return spy;
+	}
+
+	public void setGatekeepSpy(GatekeeperSpy spy) {
+		this.spy = spy;
+
 	}
 
 }

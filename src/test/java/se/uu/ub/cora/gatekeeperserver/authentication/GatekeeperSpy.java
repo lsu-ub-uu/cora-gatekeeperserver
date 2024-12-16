@@ -25,25 +25,29 @@ import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
 public class GatekeeperSpy implements Gatekeeper {
 
 	public boolean getUserForTokenWasCalled = false;
 	public boolean getAuthTokenForUserInfoWasCalled = false;
 
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
+
+	public GatekeeperSpy() {
+		MCR.useMRV(MRV);
+		MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> createUser());
+		MRV.setDefaultReturnValuesSupplier("getAuthTokenForUserInfo", () -> createAuthToken());
+	}
+
 	@Override
 	public User getUserForToken(String authToken) {
-		getUserForTokenWasCalled = true;
-		if (authToken == null) {
-			User user = new User("12345");
-			user.roles.add("someRole112345");
-			user.roles.add("someRole212345");
-			return user;
+		return (User) MCR.addCallAndReturnFromMRV("authToken", authToken);
+	}
 
-		}
-		if (authToken.equals("dummyNonAuthenticatedToken")) {
-			throw new AuthenticationException("token not valid");
-		}
+	private User createUser() {
 		User user = new User("someId");
 		user.roles.add("someRole1");
 		user.roles.add("someRole2");
@@ -52,10 +56,10 @@ public class GatekeeperSpy implements Gatekeeper {
 
 	@Override
 	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
-		if (userInfo.loginId != null && userInfo.loginId.equals("someLoginIdWithProblem")) {
-			throw new AuthenticationException("problem getting authToken for userInfo");
-		}
-		getAuthTokenForUserInfoWasCalled = true;
+		return (AuthToken) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
+	}
+
+	private AuthToken createAuthToken() {
 		return new AuthToken("someAuthToken", "someTokenId", 100L, 200L, "someIdFromStorage",
 				"someloginId", Optional.empty(), Optional.empty());
 	}

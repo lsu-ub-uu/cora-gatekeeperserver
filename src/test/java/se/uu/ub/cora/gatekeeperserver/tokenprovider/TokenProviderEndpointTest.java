@@ -28,7 +28,9 @@ import org.testng.annotations.Test;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.authentication.GateKeeperLocatorSpy;
+import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 
 public class TokenProviderEndpointTest {
@@ -36,10 +38,13 @@ public class TokenProviderEndpointTest {
 	private GateKeeperLocatorSpy locator;
 	private TokenProviderEndpoint tokenProviderEndpoint;
 	private String jsonUserInfo;
+	private GatekeeperSpy gatekeeperSpy;
 
 	@BeforeMethod
 	public void setUp() {
 		locator = new GateKeeperLocatorSpy();
+		gatekeeperSpy = new GatekeeperSpy();
+		locator.setGatekeepSpy(gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		tokenProviderEndpoint = new TokenProviderEndpoint();
 		jsonUserInfo = "{\"children\":[" + "{\"name\":\"loginId\",\"value\":\"\"},"
@@ -52,7 +57,7 @@ public class TokenProviderEndpointTest {
 	public void testDependenciesAreCalled() {
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
 		assertTrue(locator.gatekeeperLocated);
-		assertTrue(locator.gatekeeperSpy.getAuthTokenForUserInfoWasCalled);
+		gatekeeperSpy.MCR.assertMethodWasCalled("getAuthTokenForUserInfo");
 	}
 
 	@Test
@@ -80,12 +85,20 @@ public class TokenProviderEndpointTest {
 
 	@Test
 	public void testNonUserInfoWithProblem() {
+		gatekeeperSpy.MRV.setAlwaysThrowException("getAuthTokenForUserInfo",
+				new AuthenticationException("problem getting authToken for userInfo"));
+
 		String jsonUserInfo = "{\"children\":["
 				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
 				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
 				+ "{\"name\":\"idInUserStorage\",\"value\":\"\"}" + "],\"name\":\"userInfo\"}";
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
 		assertResponseStatusIs(Response.Status.UNAUTHORIZED);
+	}
+
+	@Test
+	public void testRenewAuthTokenNotAuthorized() throws Exception {
+
 	}
 
 	@Test
