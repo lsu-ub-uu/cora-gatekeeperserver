@@ -66,4 +66,10 @@ public class GatekeeperSpy implements Gatekeeper {
 			throw new AuthenticationException("authToken does not exist");
 		}
 	}
+
+	@Override
+	public AuthToken renewAuthToken(String tokenId, String token) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

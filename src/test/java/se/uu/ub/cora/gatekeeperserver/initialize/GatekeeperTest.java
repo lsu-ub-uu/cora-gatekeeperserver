@@ -60,6 +60,7 @@ public class GatekeeperTest {
 		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProvider);
 		userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
 		gatekeeper = GatekeeperImp.INSTANCE;
+		gatekeeper.onlyForTestEmptyAuthentications();
 	}
 
 	@Test
@@ -210,14 +211,6 @@ public class GatekeeperTest {
 	}
 
 	@Test
-	public void testOnlyForTestSetAuthToken() throws Exception {
-		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
-		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
-
-		assertEquals(gatekeeper.getUserForToken(TOKEN), authentication.user());
-	}
-
-	@Test
 	public void testMultipleLoginsReturnsDiferentTokens() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		AuthToken authToken2 = gatekeeper.getAuthTokenForUserInfo(userInfo);
@@ -226,13 +219,13 @@ public class GatekeeperTest {
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
-			+ "AuthToken does not exist")
+			+ "Token not valid")
 	public void testRemoveAuthTokenForUserTokenDoesNotExist() {
 		gatekeeper.removeAuthToken("someLoginId", "someNonExistingToken");
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
-			+ "TokenId does not exists")
+			+ "Token not valid")
 	public void testRemoveAuthTokenForUserFailsIfWrongUserId() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		gatekeeper.getUserForToken(authToken.token());
@@ -283,8 +276,59 @@ public class GatekeeperTest {
 		gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
 	}
 
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
+			+ "Token not valid")
+	public void testRenewUntilAuthTokenAfterRenewUntil() throws Exception {
+		Authentication authentication = createAuthenticationRenewUntilInThePast();
+		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
+
+		gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
+	}
+
+	@Test
+	public void testRenewAuthTokenSetCorrectData() throws Exception {
+		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
+		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
+
+		AuthToken newAuthToken = gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
+
+		assertEquals(newAuthToken.tokenId(), authentication.tokenId());
+		assertNotEquals(newAuthToken.token(), TOKEN);
+		assertTokenHasUUIDFormat(newAuthToken.token());
+		assertNotEquals(newAuthToken.validUntil(), authentication.validUntil());
+		assertTimestamp(newAuthToken.validUntil(), VALID_UNTIL_NO_MILLIS);
+		assertEquals(newAuthToken.renewUntil(), authentication.renewUntil());
+		User user = authentication.user();
+		assertEquals(newAuthToken.idInUserStorage(), user.id);
+		assertEquals(newAuthToken.loginId(), user.loginId);
+		assertEquals(newAuthToken.firstName().get(), user.firstName);
+		assertEquals(newAuthToken.lastName().get(), user.lastName);
+	}
+
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "Token not valid")
+	public void testRenewDataNotBeAbletoAuthenticateWithOldAuthToken() throws Exception {
+		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
+		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
+
+		gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
+
+		String oldToken = TOKEN;
+		gatekeeper.getUserForToken(oldToken);
+	}
+
+	@Test
+	public void testRenewDataIsAbletoAuthenticateWithNewAuthToken() throws Exception {
+		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
+		String oldToken = TOKEN;
+		gatekeeper.onlyForTestSetAuthentication(oldToken, authentication);
+
+		AuthToken newAuthToken = gatekeeper.renewAuthToken(authentication.tokenId(), oldToken);
+
+		gatekeeper.getUserForToken(newAuthToken.token());
+	}
+
 	private Authentication createAuthenticationValidUntilInThePast() {
-		User someUser = new User(USER_ID);
+		User someUser = createUserWithNames();
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp - THIRTY_MINUTES;
 		long renewUntil = currentTimestamp + THIRTY_MINUTES;
@@ -292,27 +336,42 @@ public class GatekeeperTest {
 	}
 
 	private Authentication createAuthenticationValidUntilAndRenewUntilInTheFuture() {
-		User someUser = new User(USER_ID);
+		User someUser = createUserWithNames();
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp + THIRTY_MINUTES;
 		long renewUntil = currentTimestamp + THIRTY_MINUTES;
 		return new Authentication(TOKEN_ID, someUser, validUntil, renewUntil);
 	}
 
-	private Authentication createAuthenticationValidUntilAndRenewUntilInThePast() {
+	private User createUserWithNames() {
 		User someUser = new User(USER_ID);
+		someUser.firstName = "someFirstName";
+		someUser.lastName = "someLastName";
+		return someUser;
+	}
+
+	private Authentication createAuthenticationValidUntilAndRenewUntilInThePast() {
+		User someUser = createUserWithNames();
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp - THIRTY_MINUTES;
 		long renewUntil = currentTimestamp - THIRTY_MINUTES;
 		return new Authentication(TOKEN_ID, someUser, validUntil, renewUntil);
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
-			+ "Token not valid")
-	public void testRenewUntilAuthTokenAfterRenewUntil() throws Exception {
-		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInThePast();
+	private Authentication createAuthenticationRenewUntilInThePast() {
+		User someUser = createUserWithNames();
+		long currentTimestamp = System.currentTimeMillis();
+		long validUntil = currentTimestamp + THIRTY_MINUTES;
+		long renewUntil = currentTimestamp - THIRTY_MINUTES;
+		return new Authentication(TOKEN_ID, someUser, validUntil, renewUntil);
+	}
+
+	@Test
+	public void testOnlyForTestSetAuthToken() throws Exception {
+		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
-		gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
+		assertEquals(gatekeeper.getUserForToken(TOKEN), authentication.user());
 	}
+
 }
