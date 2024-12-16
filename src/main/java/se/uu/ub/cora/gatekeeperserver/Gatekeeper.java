@@ -49,4 +49,6 @@ public interface Gatekeeper {
 	 * @param authToken
 	 */
 	void removeAuthToken(String tokenId, String authToken);
+
+	AuthToken renewAuthToken(String tokenId, String token);
 }

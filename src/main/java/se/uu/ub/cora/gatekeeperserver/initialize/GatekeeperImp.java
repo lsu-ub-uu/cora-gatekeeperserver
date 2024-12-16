@@ -40,11 +40,11 @@ public enum GatekeeperImp implements Gatekeeper {
 	private Map<String, Authentication> authentications = new HashMap<>();
 
 	@Override
-	public User getUserForToken(String authToken) {
-		if (authToken == null) {
+	public User getUserForToken(String token) {
+		if (token == null) {
 			return returnGuestUser();
 		}
-		return tryToGetAuthenticatedUser(authToken);
+		return tryToGetAuthenticatedUser(token);
 	}
 
 	private User returnGuestUser() {
@@ -52,19 +52,29 @@ public enum GatekeeperImp implements Gatekeeper {
 		return userPicker.pickGuest();
 	}
 
-	private User tryToGetAuthenticatedUser(String authToken) {
-		throwErrorIfInvalidToken(authToken);
-		return getAuthenticatedUser(authToken);
+	private User tryToGetAuthenticatedUser(String token) {
+		throwErrorIfInvalidToken(token);
+		return getAuthenticatedUser(token);
 	}
 
-	private void throwErrorIfInvalidToken(String authToken) {
-		if (!authentications.containsKey(authToken)) {
-			throw new AuthenticationException("token not valid");
+	private void throwErrorIfInvalidToken(String token) {
+		if (authenticationDoNotExistsOrInvalid(token)) {
+			throw new AuthenticationException("Token not valid");
 		}
 	}
 
-	private User getAuthenticatedUser(String authToken) {
-		Authentication authentication = authentications.get(authToken);
+	private boolean authenticationDoNotExistsOrInvalid(String token) {
+		return !authentications.containsKey(token) || !authenticationValid(token);
+	}
+
+	boolean authenticationValid(String token) {
+		Authentication authentication = authentications.get(token);
+		long currentTimestamp = System.currentTimeMillis();
+		return currentTimestamp <= authentication.validUntil();
+	}
+
+	private User getAuthenticatedUser(String token) {
+		Authentication authentication = authentications.get(token);
 		return authentication.user();
 	}
 
@@ -83,18 +93,17 @@ public enum GatekeeperImp implements Gatekeeper {
 		User pickedUser = userPicker.pickUser(userInfo);
 		String generatedToken = generateRandomUUID();
 		String generatedTokenId = generateRandomUUID();
-		Authentication createdAuthentication = new Authentication(generatedTokenId, pickedUser);
-		authentications.put(generatedToken, createdAuthentication);
-		return createAuthTokenUsingPickedUserAndTokenAndTokenId(pickedUser, generatedToken,
-				generatedTokenId);
-	}
 
-	private AuthToken createAuthTokenUsingPickedUserAndTokenAndTokenId(User pickedUser,
-			String token, String tokenId) {
-		long validUntil = System.currentTimeMillis() + VALID_UNTIL_NO_MILLIS;
-		long renewUntil = System.currentTimeMillis() + RENEW_UNTIL_NO_MILLIS;
-		return new AuthToken(token, tokenId, validUntil, renewUntil, pickedUser.id,
-				pickedUser.loginId, Optional.ofNullable(pickedUser.firstName),
+		long currentTime = System.currentTimeMillis();
+		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
+		long renewUntil = currentTime + RENEW_UNTIL_NO_MILLIS;
+		Authentication createdAuthentication = new Authentication(generatedTokenId, pickedUser,
+				validUntil, renewUntil);
+
+		authentications.put(generatedToken, createdAuthentication);
+
+		return new AuthToken(generatedToken, generatedTokenId, validUntil, renewUntil,
+				pickedUser.id, pickedUser.loginId, Optional.ofNullable(pickedUser.firstName),
 				Optional.ofNullable(pickedUser.lastName));
 	}
 
@@ -105,7 +114,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	@Override
 	public void removeAuthToken(String tokenId, String token) {
 		throwErrorIfAuthTokenDoesNotExists(token);
-		removeAuthTokenIfUserIdMatches(token, tokenId);
+		removeAuthTokenIfUserIdMatches(tokenId, token);
 	}
 
 	private void throwErrorIfAuthTokenDoesNotExists(String token) {
@@ -114,18 +123,27 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	private void removeAuthTokenIfUserIdMatches(String token, String tokenId) {
-		ensureUserIdMatchesTokensUserId(token, tokenId);
+	private void removeAuthTokenIfUserIdMatches(String tokenId, String token) {
+		ensureUserIdMatchesTokensUserId(tokenId, token);
 		authentications.remove(token);
 	}
 
-	private void ensureUserIdMatchesTokensUserId(String token, String tokenId) {
+	private void ensureUserIdMatchesTokensUserId(String tokenId, String token) {
 		Authentication authentication = authentications.get(token);
 		if (!tokenId.equals(authentication.tokenId())) {
 			throw new AuthenticationException("TokenId does not exists");
 		}
 	}
 
-	record Authentication(String tokenId, User user) {
+	void onlyForTestSetAuthentication(String token, Authentication authentication) {
+		authentications.put(token, authentication);
+
+	}
+
+	@Override
+	public AuthToken renewAuthToken(String tokenId, String token) {
+		throw new AuthenticationException("Token not valid");
+		// TODO Auto-generated method stub
+		// return null;
 	}
 }
