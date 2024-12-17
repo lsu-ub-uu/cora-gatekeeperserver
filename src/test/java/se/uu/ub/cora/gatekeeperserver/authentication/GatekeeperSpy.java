@@ -40,11 +40,7 @@ public class GatekeeperSpy implements Gatekeeper {
 		MCR.useMRV(MRV);
 		MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> createUser());
 		MRV.setDefaultReturnValuesSupplier("getAuthTokenForUserInfo", () -> createAuthToken());
-	}
-
-	@Override
-	public User getUserForToken(String authToken) {
-		return (User) MCR.addCallAndReturnFromMRV("authToken", authToken);
+		MRV.setDefaultReturnValuesSupplier("renewAuthToken", () -> createAuthToken());
 	}
 
 	private User createUser() {
@@ -54,26 +50,29 @@ public class GatekeeperSpy implements Gatekeeper {
 		return user;
 	}
 
-	@Override
-	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
-		return (AuthToken) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
-	}
-
 	private AuthToken createAuthToken() {
 		return new AuthToken("someAuthToken", "someTokenId", 100L, 200L, "someIdFromStorage",
 				"someloginId", Optional.empty(), Optional.empty());
 	}
 
 	@Override
-	public void removeAuthToken(String tokenId, String authToken) {
-		if ("someNonExistingAuthToken".equals(authToken)) {
-			throw new AuthenticationException("authToken does not exist");
-		}
+	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
+		return (AuthToken) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
+	}
+
+	@Override
+	public User getUserForToken(String token) {
+		return (User) MCR.addCallAndReturnFromMRV("token", token);
 	}
 
 	@Override
 	public AuthToken renewAuthToken(String tokenId, String token) {
-		// TODO Auto-generated method stub
-		return null;
+		return (AuthToken) MCR.addCallAndReturnFromMRV("tokenId", tokenId, "token", token);
 	}
+
+	@Override
+	public void removeAuthToken(String tokenId, String token) {
+		MCR.addCall("tokenId", tokenId, "token", token);
+	}
+
 }
