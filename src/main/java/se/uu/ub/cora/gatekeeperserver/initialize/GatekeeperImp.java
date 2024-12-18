@@ -21,8 +21,10 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.picker.UserPicker;
@@ -37,7 +39,7 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
 	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
-	private Map<String, Authentication> authentications = new HashMap<>();
+	private Map<String, Authentication> authentications = new ConcurrentHashMap<>();
 
 	@Override
 	public User getUserForToken(String token) {
@@ -73,6 +75,10 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	boolean authenticationValid(String token) {
 		Authentication authentication = authentications.get(token);
+		return authenticationIsValid(authentication);
+	}
+
+	private boolean authenticationIsValid(Authentication authentication) {
 		long currentTimestamp = System.currentTimeMillis();
 		return currentTimestamp <= authentication.validUntil();
 	}
@@ -84,11 +90,24 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	@Override
 	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
+		removeNoLongerValidAuthentications();
 		try {
 			return tryToGetAuthTokenForUserInfo(userInfo);
 		} catch (Exception e) {
 			throw new AuthenticationException("Could not pick user for userInfo, with error: " + e,
 					e);
+		}
+	}
+
+	void removeNoLongerValidAuthentications() {
+		for (Entry<String, Authentication> entry : authentications.entrySet()) {
+			removeAuthenticationIfNoLongerValid(entry);
+		}
+	}
+
+	private void removeAuthenticationIfNoLongerValid(Entry<String, Authentication> entry) {
+		if (!authenticationIsValid(entry.getValue())) {
+			authentications.remove(entry.getKey());
 		}
 	}
 
@@ -197,5 +216,9 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	void onlyForTestEmptyAuthentications() {
 		authentications = new HashMap<>();
+	}
+
+	Map<String, Authentication> onlyForTestGetAuthentications() {
+		return authentications;
 	}
 }

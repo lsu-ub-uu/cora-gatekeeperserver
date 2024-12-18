@@ -20,6 +20,7 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -202,6 +203,20 @@ public class GatekeeperTest {
 		assertSame(logedInUser, pickedUser);
 	}
 
+	@Test
+	public void testOldTokensRemovedWhenCreatingANew() {
+		Authentication authentication = createAuthenticationValidUntilInThePast();
+		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
+		assertEquals(gatekeeper.onlyForTestGetAuthentications().size(), 1);
+		assertTrue(gatekeeper.onlyForTestGetAuthentications().containsKey(TOKEN));
+
+		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
+
+		assertEquals(gatekeeper.onlyForTestGetAuthentications().size(), 1);
+		assertTrue(gatekeeper.onlyForTestGetAuthentications().containsKey(authToken.token()));
+		assertFalse(gatekeeper.onlyForTestGetAuthentications().containsKey(TOKEN));
+	}
+
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "Token not valid")
 	public void testgetUserForTokenNotValid() throws Exception {
 		Authentication authentication = createAuthenticationValidUntilInThePast();
@@ -348,14 +363,6 @@ public class GatekeeperTest {
 		someUser.firstName = "someFirstName";
 		someUser.lastName = "someLastName";
 		return someUser;
-	}
-
-	private Authentication createAuthenticationValidUntilAndRenewUntilInThePast() {
-		User someUser = createUserWithNames();
-		long currentTimestamp = System.currentTimeMillis();
-		long validUntil = currentTimestamp - THIRTY_MINUTES;
-		long renewUntil = currentTimestamp - THIRTY_MINUTES;
-		return new Authentication(TOKEN_ID, someUser, validUntil, renewUntil);
 	}
 
 	private Authentication createAuthenticationRenewUntilInThePast() {
