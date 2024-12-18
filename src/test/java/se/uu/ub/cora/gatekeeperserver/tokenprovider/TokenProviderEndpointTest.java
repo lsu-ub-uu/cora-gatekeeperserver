@@ -70,6 +70,17 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
+	public void testGetToken_Annotations() throws Exception {
+		AnnotationTestHelper annotationHelper = AnnotationTestHelper
+				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
+						TokenProviderEndpoint.class, "getAuthTokenForUserInfo", 1);
+
+		annotationHelper.assertHttpMethodAnnotation("POST");
+		annotationHelper.assertConsumesAnnotation("application/vnd.uub.userInfo+json");
+		annotationHelper.assertProducesAnnotation("application/vnd.uub.authToken+json");
+	}
+
+	@Test
 	public void testGetToken() {
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
 
@@ -108,12 +119,10 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testRenewAuthTokenAnnotations() throws Exception {
+	public void testRenewAuthToken_Annotations() throws Exception {
 		AnnotationTestHelper annotationHelper = AnnotationTestHelper
 				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
 						TokenProviderEndpoint.class, "renewAuthToken", 2);
-
-		tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
 
 		annotationHelper.assertHttpMethodAndPathAnnotation("POST", "{tokenId}");
 		annotationHelper.assertPathParamAnnotationByNameAndPosition("tokenId", 0);
@@ -147,6 +156,17 @@ public class TokenProviderEndpointTest {
 		assertEntityExists();
 		assertEquals(response.getEntity(), expectedAuthToken());
 
+	}
+
+	@Test
+	public void testRemoveAuthToken_Annotations() throws Exception {
+		AnnotationTestHelper annotationHelper = AnnotationTestHelper
+				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
+						TokenProviderEndpoint.class, "removeAuthToken", 2);
+
+		annotationHelper.assertHttpMethodAndPathAnnotation("DELETE", "{tokenId}");
+		annotationHelper.assertPathParamAnnotationByNameAndPosition("tokenId", 0);
+		annotationHelper.assertConsumesAnnotation("text/plain");
 	}
 
 	@Test
