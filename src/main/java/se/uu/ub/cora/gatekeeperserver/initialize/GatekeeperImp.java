@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2022, 2024 Uppsala University Library
+ * Copyright 2016, 2017, 2022, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -185,14 +185,8 @@ public enum GatekeeperImp implements Gatekeeper {
 	private Authentication replaceOldToNewAuthentication(String token, String newToken) {
 		Authentication authentication = authentications.get(token);
 		Authentication newAuthentication = renewAuthentication(authentication);
-		synchronizeAuthentications(token, newToken, newAuthentication);
+		storeNewAuthentication(newToken, newAuthentication);
 		return newAuthentication;
-	}
-
-	private void synchronizeAuthentications(String token, String newToken,
-			Authentication newAuthentication) {
-		authentications.remove(token);
-		authentications.put(newToken, newAuthentication);
 	}
 
 	private Authentication renewAuthentication(Authentication authentication) {
@@ -200,6 +194,10 @@ public enum GatekeeperImp implements Gatekeeper {
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
 		return new Authentication(authentication.tokenId(), authentication.user(), validUntil,
 				authentication.renewUntil());
+	}
+
+	private void storeNewAuthentication(String newToken, Authentication newAuthentication) {
+		authentications.put(newToken, newAuthentication);
 	}
 
 	void ensureRenewUntilHasNotPassed(String token) {

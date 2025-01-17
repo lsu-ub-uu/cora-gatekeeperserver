@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2022, 2024 Uppsala University Library
+ * Copyright 2016, 2017, 2022, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -218,7 +218,7 @@ public class GatekeeperTest {
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "Token not valid")
-	public void testgetUserForTokenNotValid() throws Exception {
+	public void testgetUserForTokenNotValid() {
 		Authentication authentication = createAuthenticationValidUntilInThePast();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
@@ -264,27 +264,27 @@ public class GatekeeperTest {
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
-	public void testRenewAuthTokenTokenIdAndTokenDoNotExist() throws Exception {
+	public void testRenewAuthTokenTokenIdAndTokenDoNotExist() {
 		gatekeeper.renewAuthToken(TOKEN_ID, TOKEN);
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
-	public void testRenewAuthTokenTokenIdDoesNotExists() throws Exception {
+	public void testRenewAuthTokenTokenIdDoesNotExists() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		gatekeeper.renewAuthToken("anotherTokenId", authToken.token());
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
-	public void testRenewAuthTokenTokenDoesNotExists() throws Exception {
+	public void testRenewAuthTokenTokenDoesNotExists() {
 		AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfo);
 		gatekeeper.renewAuthToken(authToken.tokenId(), "anotherToken");
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
-	public void testRenewUntilAuthTokenAfterValidUntil() throws Exception {
+	public void testRenewUntilAuthTokenAfterValidUntil() {
 		Authentication authentication = createAuthenticationValidUntilInThePast();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
@@ -293,7 +293,7 @@ public class GatekeeperTest {
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
-	public void testRenewUntilAuthTokenAfterRenewUntil() throws Exception {
+	public void testRenewUntilAuthTokenAfterRenewUntil() {
 		Authentication authentication = createAuthenticationRenewUntilInThePast();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
@@ -301,7 +301,7 @@ public class GatekeeperTest {
 	}
 
 	@Test
-	public void testRenewAuthTokenSetCorrectData() throws Exception {
+	public void testRenewAuthTokenSetCorrectData() {
 		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
@@ -320,19 +320,22 @@ public class GatekeeperTest {
 		assertEquals(newAuthToken.lastName().get(), user.lastName);
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "Token not valid")
-	public void testRenewDataNotBeAbletoAuthenticateWithOldAuthToken() throws Exception {
+	@Test
+	public void testRenewAuthTokenOldTokenShouldStillWork() {
 		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 
-		gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
+		AuthToken renewedAuthToken = gatekeeper.renewAuthToken(authentication.tokenId(), TOKEN);
 
 		String oldToken = TOKEN;
-		gatekeeper.getUserForToken(oldToken);
+		User userForToken = gatekeeper.getUserForToken(oldToken);
+		User userForToken2 = gatekeeper.getUserForToken(renewedAuthToken.token());
+
+		assertEquals(userForToken.loginId, userForToken2.loginId);
 	}
 
 	@Test
-	public void testRenewDataIsAbletoAuthenticateWithNewAuthToken() throws Exception {
+	public void testRenewTokenIsAbleToAuthenticateWithNewAuthToken() {
 		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
 		String oldToken = TOKEN;
 		gatekeeper.onlyForTestSetAuthentication(oldToken, authentication);
@@ -374,7 +377,7 @@ public class GatekeeperTest {
 	}
 
 	@Test
-	public void testOnlyForTestSetAuthToken() throws Exception {
+	public void testOnlyForTestSetAuthToken() {
 		Authentication authentication = createAuthenticationValidUntilAndRenewUntilInTheFuture();
 		gatekeeper.onlyForTestSetAuthentication(TOKEN, authentication);
 

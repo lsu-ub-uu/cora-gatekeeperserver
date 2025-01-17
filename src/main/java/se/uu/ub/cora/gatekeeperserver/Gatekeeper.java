@@ -70,14 +70,14 @@ public interface Gatekeeper {
 	/**
 	 * Removes the authentication token from the gatekeeper system.
 	 * 
-	 * This method checks the validity of the authentication token, ensuring that it exists and its
-	 * `validUntil` time has not passed, otherwise an {@link AuthenticationException} is thrown.
+	 * If trying to remove a token that does not exist or do not belong to tokenId then an
+	 * {@link AuthenticationException} is thrown.
 	 *
 	 * @param tokenId
 	 *            the ID of the token to remove
-	 * @param authToken
+	 * @param token
 	 *            the authentication token to remove
 	 */
-	void removeAuthToken(String tokenId, String authToken);
+	void removeAuthToken(String tokenId, String token);
 
 }
