@@ -28,16 +28,20 @@ import org.testng.annotations.Test;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 
 public class AuthenticatorEndpointTest {
 	private AuthenticatorEndpoint authenticatorEndpoint;
 	private Response response;
 	private GateKeeperLocatorSpy locator;
+	private GatekeeperSpy gatekeeperSpy;
 
 	@BeforeMethod
 	public void setUp() {
 		locator = new GateKeeperLocatorSpy();
+		gatekeeperSpy = new GatekeeperSpy();
+		locator.setGatekeepSpy(gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		authenticatorEndpoint = new AuthenticatorEndpoint();
 	}
@@ -47,7 +51,7 @@ public class AuthenticatorEndpointTest {
 		String token = "someToken";
 		response = authenticatorEndpoint.getUserForToken(token);
 		assertTrue(locator.gatekeeperLocated);
-		assertTrue(locator.gatekeeperSpy.getUserForTokenWasCalled);
+		gatekeeperSpy.MCR.assertMethodWasCalled("getUserForToken");
 	}
 
 	@Test
@@ -73,20 +77,37 @@ public class AuthenticatorEndpointTest {
 
 	@Test
 	public void testNonAuthenticatedToken() {
+		gatekeeperSpy.MRV.setAlwaysThrowException("getUserForToken",
+				new AuthenticationException("token not valid"));
+
 		response = authenticatorEndpoint.getUserForToken("dummyNonAuthenticatedToken");
+
 		assertResponseStatusIs(Response.Status.UNAUTHORIZED);
 	}
 
 	@Test
 	public void testNoTokenShouldBeGuest() {
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken",
+				() -> createGuestUser());
+
 		response = authenticatorEndpoint.getUserForToken(null);
+
 		assertResponseIsCorrectGuestUser();
 	}
 
 	@Test
 	public void testGetUserWithoutTokenShouldBeGuest() {
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken",
+				() -> createGuestUser());
 		response = authenticatorEndpoint.getUserWithoutToken();
 		assertResponseIsCorrectGuestUser();
+	}
+
+	private User createGuestUser() {
+		User user = new User("12345");
+		user.roles.add("someRole112345");
+		user.roles.add("someRole212345");
+		return user;
 	}
 
 	private void assertResponseIsCorrectGuestUser() {

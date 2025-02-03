@@ -19,10 +19,12 @@
 
 package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
@@ -33,6 +35,8 @@ import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 public final class TokenProviderEndpoint {
 
 	@POST
+	@Consumes("application/vnd.uub.userInfo+json")
+	@Produces("application/vnd.uub.authToken+json")
 	public Response getAuthTokenForUserInfo(String jsonUserInfo) {
 		try {
 			return tryToGetAuthTokenForUserInfo(jsonUserInfo);
@@ -59,11 +63,31 @@ public final class TokenProviderEndpoint {
 		return converter.convertAuthTokenToJson();
 	}
 
+	@POST
+	@Path("{tokenId}")
+	@Consumes("text/plain")
+	@Produces("application/vnd.uub.authToken+json")
+	public Response renewAuthToken(@PathParam("tokenId") String tokenId, String token) {
+		try {
+			return tryToRenewAuthToken(tokenId, token);
+		} catch (AuthenticationException e) {
+			return Response.status(Response.Status.UNAUTHORIZED).build();
+		}
+	}
+
+	private Response tryToRenewAuthToken(String tokenId, String token) {
+		Gatekeeper gatekeeper = GatekeeperInstanceProvider.getGatekeeper();
+		AuthToken renewedAuthToken = gatekeeper.renewAuthToken(tokenId, token);
+		String authTokenJson = convertAuthTokenToJson(renewedAuthToken);
+		return Response.status(Response.Status.OK).entity(authTokenJson).build();
+	}
+
 	@DELETE
 	@Path("{tokenId}")
-	public Response removeAuthToken(@PathParam("tokenId") String tokenId, String authToken) {
+	@Consumes("text/plain")
+	public Response removeAuthToken(@PathParam("tokenId") String tokenId, String token) {
 		try {
-			return tryToRemoveAuthToken(tokenId, authToken);
+			return tryToRemoveAuthToken(tokenId, token);
 		} catch (AuthenticationException e) {
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}
@@ -74,4 +98,5 @@ public final class TokenProviderEndpoint {
 		gatekeeper.removeAuthToken(tokenId, authToken);
 		return Response.status(Response.Status.OK).build();
 	}
+
 }

@@ -28,31 +28,56 @@ import org.testng.annotations.Test;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.authentication.GateKeeperLocatorSpy;
+import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 
 public class TokenProviderEndpointTest {
+	private static final String TOKEN = "someToken";
+	private static final String TOKEN_ID = "someTokenId";
 	private Response response;
 	private GateKeeperLocatorSpy locator;
 	private TokenProviderEndpoint tokenProviderEndpoint;
 	private String jsonUserInfo;
+	private GatekeeperSpy gatekeeperSpy;
 
 	@BeforeMethod
 	public void setUp() {
+
 		locator = new GateKeeperLocatorSpy();
+		gatekeeperSpy = new GatekeeperSpy();
+		locator.setGatekeepSpy(gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		tokenProviderEndpoint = new TokenProviderEndpoint();
-		jsonUserInfo = "{\"children\":[" + "{\"name\":\"loginId\",\"value\":\"\"},"
-				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
-				+ "{\"name\":\"idInUserStorage\",\"value\":\"131313\"}"
-				+ "],\"name\":\"userInfo\"}";
+		jsonUserInfo = jsonUserInfo();
+	}
+
+	private String jsonUserInfo() {
+		String userInfo = """
+				{"children":[{"name":"loginId","value":""},
+				{"name":"domainFromLogin","value":""},
+				{"name":"idInUserStorage","value":"131313"}],
+				"name":"userInfo"}""";
+		return userInfo.replace("\n", "");
 	}
 
 	@Test
 	public void testDependenciesAreCalled() {
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
 		assertTrue(locator.gatekeeperLocated);
-		assertTrue(locator.gatekeeperSpy.getAuthTokenForUserInfoWasCalled);
+		gatekeeperSpy.MCR.assertMethodWasCalled("getAuthTokenForUserInfo");
+	}
+
+	@Test
+	public void testGetToken_Annotations() throws Exception {
+		AnnotationTestHelper annotationHelper = AnnotationTestHelper
+				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
+						TokenProviderEndpoint.class, "getAuthTokenForUserInfo", 1);
+
+		annotationHelper.assertHttpMethodAnnotation("POST");
+		annotationHelper.assertConsumesAnnotation("application/vnd.uub.userInfo+json");
+		annotationHelper.assertProducesAnnotation("application/vnd.uub.authToken+json");
 	}
 
 	@Test
@@ -61,12 +86,18 @@ public class TokenProviderEndpointTest {
 
 		assertResponseStatusIs(Response.Status.OK);
 		assertEntityExists();
-		String expected = "{\"children\":[" + "{\"name\":\"token\",\"value\":\"someAuthToken\"},"
-				+ "{\"name\":\"tokenId\",\"value\":\"someTokenId\"},"
-				+ "{\"name\":\"validForNoSeconds\",\"value\":\"600\"},"
-				+ "{\"name\":\"idInUserStorage\",\"value\":\"someIdFromStorage\"},"
-				+ "{\"name\":\"loginId\",\"value\":\"someloginId\"}" + "],\"name\":\"authToken\"}";
-		assertEquals(response.getEntity(), expected);
+		assertEquals(response.getEntity(), expectedAuthToken());
+	}
+
+	private String expectedAuthToken() {
+		String authToken = """
+				{"children":[{"name":"token","value":"someAuthToken"},
+				{"name":"tokenId","value":"someTokenId"},
+				{"name":"validUntil","value":"100"},
+				{"name":"renewUntil","value":"200"},
+				{"name":"idInUserStorage","value":"someIdFromStorage"},
+				{"name":"loginId","value":"someloginId"}],"name":"authToken"}""";
+		return authToken.replace("\n", "");
 	}
 
 	private void assertResponseStatusIs(Status responseStatus) {
@@ -79,27 +110,79 @@ public class TokenProviderEndpointTest {
 
 	@Test
 	public void testNonUserInfoWithProblem() {
-		String jsonUserInfo = "{\"children\":["
-				+ "{\"name\":\"loginId\",\"value\":\"someLoginIdWithProblem\"},"
-				+ "{\"name\":\"domainFromLogin\",\"value\":\"\"},"
-				+ "{\"name\":\"idInUserStorage\",\"value\":\"\"}" + "],\"name\":\"userInfo\"}";
+		gatekeeperSpy.MRV.setAlwaysThrowException("getAuthTokenForUserInfo",
+				new AuthenticationException("problem getting authToken for userInfo"));
+
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
+
 		assertResponseStatusIs(Response.Status.UNAUTHORIZED);
 	}
 
 	@Test
+	public void testRenewAuthToken_Annotations() throws Exception {
+		AnnotationTestHelper annotationHelper = AnnotationTestHelper
+				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
+						TokenProviderEndpoint.class, "renewAuthToken", 2);
+
+		annotationHelper.assertHttpMethodAndPathAnnotation("POST", "{tokenId}");
+		annotationHelper.assertPathParamAnnotationByNameAndPosition("tokenId", 0);
+		annotationHelper.assertConsumesAnnotation("text/plain");
+		annotationHelper.assertProducesAnnotation("application/vnd.uub.authToken+json");
+	}
+
+	@Test
+	public void testRenewAuthCallsCorrectMethod() throws Exception {
+		tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
+
+		gatekeeperSpy.MCR.assertCalledParametersReturn("renewAuthToken", TOKEN_ID, TOKEN);
+	}
+
+	@Test
+	public void testRenewAuthUnAuthorized() throws Exception {
+		gatekeeperSpy.MRV.setAlwaysThrowException("renewAuthToken",
+				new AuthenticationException("error from spy"));
+
+		response = tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
+
+		assertResponseStatusIs(Response.Status.UNAUTHORIZED);
+	}
+
+	@Test
+	public void testRenewAuthTokenOK() throws Exception {
+
+		response = tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
+
+		assertResponseStatusIs(Response.Status.OK);
+		assertEntityExists();
+		assertEquals(response.getEntity(), expectedAuthToken());
+
+	}
+
+	@Test
+	public void testRemoveAuthToken_Annotations() throws Exception {
+		AnnotationTestHelper annotationHelper = AnnotationTestHelper
+				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
+						TokenProviderEndpoint.class, "removeAuthToken", 2);
+
+		annotationHelper.assertHttpMethodAndPathAnnotation("DELETE", "{tokenId}");
+		annotationHelper.assertPathParamAnnotationByNameAndPosition("tokenId", 0);
+		annotationHelper.assertConsumesAnnotation("text/plain");
+	}
+
+	@Test
 	public void testRemoveAuthTokenForUser() {
-		String authToken = "someAuthToken";
-		String tokenId = "someTokenId";
-		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
+		response = tokenProviderEndpoint.removeAuthToken(TOKEN_ID, TOKEN);
+
+		gatekeeperSpy.MCR.assertParameters("removeAuthToken", 0, TOKEN_ID, TOKEN);
 		assertResponseStatusIs(Response.Status.OK);
 	}
 
 	@Test
 	public void testRemoveAuthTokenForUserWithProblem() {
-		String authToken = "someNonExistingAuthToken";
-		String tokenId = "someTokenId";
-		response = tokenProviderEndpoint.removeAuthToken(tokenId, authToken);
+		gatekeeperSpy.MRV.setAlwaysThrowException("removeAuthToken",
+				new AuthenticationException("authToken does not exist"));
+		response = tokenProviderEndpoint.removeAuthToken(TOKEN_ID, "someNonExistingToken");
+
 		assertResponseStatusIs(Response.Status.NOT_FOUND);
 	}
 }

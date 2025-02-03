@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,28 +16,10 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
+package se.uu.ub.cora.gatekeeperserver.initialize;
 
-package se.uu.ub.cora.gatekeeperserver.authentication;
+import se.uu.ub.cora.gatekeeper.user.User;
 
-import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
-import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
-
-public class GateKeeperLocatorSpy implements GatekeeperLocator {
-
-	public GatekeeperSpy gatekeeperSpy;
-	public boolean gatekeeperLocated = false;
-	private GatekeeperSpy spy;
-
-	@Override
-	public Gatekeeper locateGatekeeper() {
-		gatekeeperLocated = true;
-		// gatekeeperSpy = new GatekeeperSpy();
-		return spy;
-	}
-
-	public void setGatekeepSpy(GatekeeperSpy spy) {
-		this.spy = spy;
-
-	}
+public record Authentication(String tokenId, User user, long validUntil, long renewUntil) {
 
 }

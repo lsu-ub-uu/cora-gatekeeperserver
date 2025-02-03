@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017 Uppsala University Library
+ * Copyright 2016, 2017, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -28,8 +28,8 @@ import org.testng.annotations.Test;
 public class AuthTokenToJsonConverterTest {
 	@Test
 	public void testAuthTokenToJsonConverter() {
-		AuthToken authToken = new AuthToken("someToken", "someTokenId", 599, "someIdFromStorage",
-				"loginId", Optional.empty(), Optional.empty());
+		AuthToken authToken = new AuthToken("someToken", "someTokenId", 100L, 200L,
+				"someIdFromStorage", "loginId", Optional.empty(), Optional.empty());
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
 		String expected = """
@@ -44,8 +44,12 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "someTokenId"
 				    },
 				    {
-				      "name": "validForNoSeconds",
-				      "value": "599"
+				      "name": "validUntil",
+				      "value": "100"
+				    },
+				    {
+				      "name": "renewUntil",
+				      "value": "200"
 				    },
 				    {
 				      "name": "idInUserStorage",
@@ -67,8 +71,9 @@ public class AuthTokenToJsonConverterTest {
 
 	@Test
 	public void testAuthTokenToJsonConverterWithName() {
-		AuthToken authToken = new AuthToken("someToken", "someTokenId", 599, "someIdFromStorage",
-				"loginId", Optional.of("someFirstName"), Optional.of("someLastName"));
+		AuthToken authToken = new AuthToken("someToken", "someTokenId", 100L, 200L,
+				"someIdFromStorage", "loginId", Optional.of("someFirstName"),
+				Optional.of("someLastName"));
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
 		String expected = """
@@ -83,8 +88,12 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "someTokenId"
 				    },
 				    {
-				      "name": "validForNoSeconds",
-				      "value": "599"
+				      "name": "validUntil",
+				      "value": "100"
+				    },
+				    {
+				      "name": "renewUntil",
+				      "value": "200"
 				    },
 				    {
 				      "name": "idInUserStorage",

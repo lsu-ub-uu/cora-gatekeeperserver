@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -25,45 +25,54 @@ import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
 public class GatekeeperSpy implements Gatekeeper {
 
 	public boolean getUserForTokenWasCalled = false;
 	public boolean getAuthTokenForUserInfoWasCalled = false;
 
-	@Override
-	public User getUserForToken(String authToken) {
-		getUserForTokenWasCalled = true;
-		if (authToken == null) {
-			User user = new User("12345");
-			user.roles.add("someRole112345");
-			user.roles.add("someRole212345");
-			return user;
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
 
-		}
-		if (authToken.equals("dummyNonAuthenticatedToken")) {
-			throw new AuthenticationException("token not valid");
-		}
+	public GatekeeperSpy() {
+		MCR.useMRV(MRV);
+		MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> createUser());
+		MRV.setDefaultReturnValuesSupplier("getAuthTokenForUserInfo", () -> createAuthToken());
+		MRV.setDefaultReturnValuesSupplier("renewAuthToken", () -> createAuthToken());
+	}
+
+	private User createUser() {
 		User user = new User("someId");
 		user.roles.add("someRole1");
 		user.roles.add("someRole2");
 		return user;
 	}
 
-	@Override
-	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
-		if (userInfo.loginId != null && userInfo.loginId.equals("someLoginIdWithProblem")) {
-			throw new AuthenticationException("problem getting authToken for userInfo");
-		}
-		getAuthTokenForUserInfoWasCalled = true;
-		return new AuthToken("someAuthToken", "someTokenId", 600, "someIdFromStorage",
+	private AuthToken createAuthToken() {
+		return new AuthToken("someAuthToken", "someTokenId", 100L, 200L, "someIdFromStorage",
 				"someloginId", Optional.empty(), Optional.empty());
 	}
 
 	@Override
-	public void removeAuthToken(String tokenId, String authToken) {
-		if ("someNonExistingAuthToken".equals(authToken)) {
-			throw new AuthenticationException("authToken does not exist");
-		}
+	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
+		return (AuthToken) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
 	}
+
+	@Override
+	public User getUserForToken(String token) {
+		return (User) MCR.addCallAndReturnFromMRV("token", token);
+	}
+
+	@Override
+	public AuthToken renewAuthToken(String tokenId, String token) {
+		return (AuthToken) MCR.addCallAndReturnFromMRV("tokenId", tokenId, "token", token);
+	}
+
+	@Override
+	public void removeAuthToken(String tokenId, String token) {
+		MCR.addCall("tokenId", tokenId, "token", token);
+	}
+
 }

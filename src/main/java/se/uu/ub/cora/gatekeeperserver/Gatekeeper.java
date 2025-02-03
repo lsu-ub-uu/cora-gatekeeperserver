@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -21,13 +21,63 @@ package se.uu.ub.cora.gatekeeperserver;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.user.User;
+import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 
 public interface Gatekeeper {
 
-	User getUserForToken(String authToken);
-
+	/**
+	 * Retrieves an authentication token for the given user information.
+	 *
+	 * @param userInfo
+	 *            the user information used to generate the authentication token
+	 * @return an {@link AuthToken} associated with the provided {@link UserInfo}
+	 */
 	AuthToken getAuthTokenForUserInfo(UserInfo userInfo);
 
-	void removeAuthToken(String tokenId, String authToken);
+	/**
+	 * Returns the user associated with the given authentication token.
+	 * 
+	 * This method checks the validity of the authentication token, ensuring that it exists and its
+	 * `validUntil` time has not passed, otherwise an {@link AuthenticationException} is thrown.
+	 *
+	 * @param token
+	 *            the authentication token to look up
+	 * @return the {@link User} associated with the provided authentication token
+	 * @throws AuthenticationException
+	 *             if the authentication token is not valid
+	 */
+	User getUserForToken(String token);
+
+	/**
+	 * Renews the authentication token if it is valid and eligible for renewal.
+	 *
+	 * This method checks the validity of the authentication token, ensuring that its `validUntil`
+	 * time has not passed, and that the `renewUntil` timestamp allows renewal. If the token is
+	 * non-existent, invalid, or past the renewal period, an {@link AuthenticationException} is
+	 * thrown.
+	 *
+	 * @param tokenId
+	 *            the ID of the token to renew
+	 * @param token
+	 *            the authentication token to renew
+	 * @return a new {@link AuthToken} if renewal is successful
+	 * @throws AuthenticationException
+	 *             if the authentication token is invalid or cannot be renewed
+	 */
+	AuthToken renewAuthToken(String tokenId, String token);
+
+	/**
+	 * Removes the authentication token from the gatekeeper system.
+	 * 
+	 * If trying to remove a token that does not exist or do not belong to tokenId then an
+	 * {@link AuthenticationException} is thrown.
+	 *
+	 * @param tokenId
+	 *            the ID of the token to remove
+	 * @param token
+	 *            the authentication token to remove
+	 */
+	void removeAuthToken(String tokenId, String token);
+
 }
