@@ -134,17 +134,10 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private AuthToken createAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
 		User user = activeTokenForUser.user();
-		// TODO: make sure permissionUnits are passed to AuthToken from User. It is broken so we
-		// know where to continue from
-
-		// return new AuthToken(token, activeTokenForUser.tokenId(),
-		// activeTokenForUser.validUntil(),
-		// activeTokenForUser.renewUntil(), user.id, user.loginId,
-		// Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName),
-		// Collections.emptySet());
 		return new AuthToken(token, activeTokenForUser.tokenId(), activeTokenForUser.validUntil(),
 				activeTokenForUser.renewUntil(), user.id, user.loginId,
-				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName));
+				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName),
+				user.permissionUnitIds);
 	}
 
 	private String generateRandomUUID() {

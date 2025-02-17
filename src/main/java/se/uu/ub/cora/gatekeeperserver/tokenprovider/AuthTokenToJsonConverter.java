@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2024 Uppsala University Library
+ * Copyright 2016, 2017, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -48,6 +48,7 @@ public final class AuthTokenToJsonConverter {
 		addIdInUserStorageToJson(userChildren);
 		addLoginIdToJson(userChildren);
 		possiblyAddNameToJson(userChildren);
+		possiblyAddPermissionUnitsToJson(userChildren);
 		return userBuilder.toJsonFormattedString();
 	}
 
@@ -114,6 +115,34 @@ public final class AuthTokenToJsonConverter {
 			lastName.addKeyString(VALUE, String.valueOf(optionalLastname.get()));
 			userChildren.addJsonObjectBuilder(lastName);
 		}
+	}
+
+	private void possiblyAddPermissionUnitsToJson(JsonArrayBuilder userChildren) {
+		if (!authToken.permissionUnits().isEmpty()) {
+			int repeatId = 0;
+			for (String permissionUnit : authToken.permissionUnits()) {
+				repeatId++;
+				addPermissionUnitToJson(userChildren, permissionUnit, String.valueOf(repeatId));
+			}
+		}
+	}
+
+	private void addPermissionUnitToJson(JsonArrayBuilder userChildren, String linkedRecordId,
+			String repeatId) {
+		JsonObjectBuilder permissionUnit = createObjectBuilderWithName("permissionUnit");
+		JsonArrayBuilder permissionUnitChildren = orgJsonBuilderFactoryAdapter.createArrayBuilder();
+		permissionUnit.addKeyJsonArrayBuilder(CHILDREN, permissionUnitChildren);
+		permissionUnit.addKeyString("repeatid", repeatId);
+
+		JsonObjectBuilder type = createObjectBuilderWithName("linkedRecordType");
+		type.addKeyString(VALUE, "permissionUnit");
+		permissionUnitChildren.addJsonObjectBuilder(type);
+
+		JsonObjectBuilder id = createObjectBuilderWithName("linkedRecordId");
+		id.addKeyString(VALUE, linkedRecordId);
+		permissionUnitChildren.addJsonObjectBuilder(id);
+
+		userChildren.addJsonObjectBuilder(permissionUnit);
 	}
 
 	private JsonArrayBuilder returnAndAddChildrenToBuilder(JsonObjectBuilder userBuilder) {

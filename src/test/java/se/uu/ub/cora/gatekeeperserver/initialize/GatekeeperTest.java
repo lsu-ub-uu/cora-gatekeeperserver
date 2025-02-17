@@ -108,6 +108,7 @@ public class GatekeeperTest {
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertSame(authToken.firstName().get(), pickedUser.firstName);
 		assertSame(authToken.lastName().get(), pickedUser.lastName);
+		assertSame(authToken.permissionUnits(), pickedUser.permissionUnitIds);
 	}
 
 	private void assertTimestamp(long timestampToValidate, long extraMillis) {
@@ -142,6 +143,7 @@ public class GatekeeperTest {
 		assertSame(authToken.loginId(), pickedUser.loginId);
 		assertTrue(authToken.firstName().isEmpty());
 		assertTrue(authToken.lastName().isEmpty());
+		assertSame(authToken.permissionUnits(), pickedUser.permissionUnitIds);
 	}
 
 	private void assertTokenHasUUIDFormat(String token) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2017, 2024 Uppsala University Library
+ * Copyright 2016, 2017, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -21,15 +21,19 @@ package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
 import static org.testng.Assert.assertEquals;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.testng.annotations.Test;
 
 public class AuthTokenToJsonConverterTest {
 	@Test
-	public void testAuthTokenToJsonConverter() {
+	public void testAuthTokenToJsonConverterWithoutNamesNoPermissionUnits() {
 		AuthToken authToken = new AuthToken("someToken", "someTokenId", 100L, 200L,
-				"someIdFromStorage", "loginId", Optional.empty(), Optional.empty());
+				"someIdFromStorage", "loginId", Optional.empty(), Optional.empty(),
+				Collections.emptySet());
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
 		String expected = """
@@ -70,10 +74,10 @@ public class AuthTokenToJsonConverterTest {
 	}
 
 	@Test
-	public void testAuthTokenToJsonConverterWithName() {
+	public void testAuthTokenToJsonConverterWithNameAndOnePermissionUnits() {
 		AuthToken authToken = new AuthToken("someToken", "someTokenId", 100L, 200L,
 				"someIdFromStorage", "loginId", Optional.of("someFirstName"),
-				Optional.of("someLastName"));
+				Optional.of("someLastName"), Set.of("001"));
 		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
 		String json = converter.convertAuthTokenToJson();
 		String expected = """
@@ -110,6 +114,100 @@ public class AuthTokenToJsonConverterTest {
 				    {
 				      "name": "lastName",
 				      "value": "someLastName"
+				    },
+				    {
+				      "repeatid": "1",
+				      "children": [
+				        {
+				          "name": "linkedRecordType",
+				          "value": "permissionUnit"
+				        },
+				        {
+				          "name": "linkedRecordId",
+				          "value": "001"
+				        }
+				      ],
+				      "name": "permissionUnit"
+				    }
+				  ],
+				  "name": "authToken"
+				}""";
+		assertEquals(json, compactString(expected));
+	}
+
+	@Test
+	public void testAuthTokenToJsonConverterWithNameAndTwoPermissionUnits() {
+		Set<String> permissionUnits = new LinkedHashSet<>();
+		permissionUnits.add("001");
+		permissionUnits.add("002");
+
+		AuthToken authToken = new AuthToken("someToken", "someTokenId", 100L, 200L,
+				"someIdFromStorage", "loginId", Optional.of("someFirstName"),
+				Optional.of("someLastName"), permissionUnits);
+		AuthTokenToJsonConverter converter = new AuthTokenToJsonConverter(authToken);
+		String json = converter.convertAuthTokenToJson();
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "name": "token",
+				      "value": "someToken"
+				    },
+				    {
+				      "name": "tokenId",
+				      "value": "someTokenId"
+				    },
+				    {
+				      "name": "validUntil",
+				      "value": "100"
+				    },
+				    {
+				      "name": "renewUntil",
+				      "value": "200"
+				    },
+				    {
+				      "name": "idInUserStorage",
+				      "value": "someIdFromStorage"
+				    },
+				    {
+				      "name": "loginId",
+				      "value": "loginId"
+				    },
+				    {
+				      "name": "firstName",
+				      "value": "someFirstName"
+				    },
+				    {
+				      "name": "lastName",
+				      "value": "someLastName"
+				    },
+				    {
+				      "repeatid": "1",
+				      "children": [
+				        {
+				          "name": "linkedRecordType",
+				          "value": "permissionUnit"
+				        },
+				        {
+				          "name": "linkedRecordId",
+				          "value": "001"
+				        }
+				      ],
+				      "name": "permissionUnit"
+				    },
+				    {
+				      "repeatid": "2",
+				      "children": [
+				        {
+				          "name": "linkedRecordType",
+				          "value": "permissionUnit"
+				        },
+				        {
+				          "name": "linkedRecordId",
+				          "value": "002"
+				        }
+				      ],
+				      "name": "permissionUnit"
 				    }
 				  ],
 				  "name": "authToken"
