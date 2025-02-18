@@ -19,6 +19,7 @@
 
 package se.uu.ub.cora.gatekeeperserver.authentication;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
@@ -52,7 +53,7 @@ public class GatekeeperSpy implements Gatekeeper {
 
 	private AuthToken createAuthToken() {
 		return new AuthToken("someAuthToken", "someTokenId", 100L, 200L, "someIdFromStorage",
-				"someloginId", Optional.empty(), Optional.empty());
+				"someloginId", Optional.empty(), Optional.empty(), Collections.emptySet());
 	}
 
 	@Override

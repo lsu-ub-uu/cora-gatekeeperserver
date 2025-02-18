@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2024 Uppsala University Library
+ * Copyright 2016, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,8 +20,9 @@
 package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
 import java.util.Optional;
+import java.util.Set;
 
 public final record AuthToken(String token, String tokenId, long validUntil, long renewUntil,
 		String idInUserStorage, String loginId, Optional<String> firstName,
-		Optional<String> lastName) {
+		Optional<String> lastName, Set<String> permissionUnits) {
 }

@@ -39,7 +39,7 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
 	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
-	private Map<String, Authentication> authentications = new ConcurrentHashMap<>();
+	private Map<String, ActiveTokenForUser> activeTokens = new ConcurrentHashMap<>();
 
 	@Override
 	public User getUserForToken(String token) {
@@ -60,7 +60,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private void throwErrorIfInvalidToken(String token) {
-		if (authenticationDoNotExistsOrInvalid(token)) {
+		if (tokenDoNotExistsOrInvalid(token)) {
 			throw createExceptionTokenNotValid();
 		}
 	}
@@ -69,28 +69,28 @@ public enum GatekeeperImp implements Gatekeeper {
 		return new AuthenticationException("Token not valid");
 	}
 
-	private boolean authenticationDoNotExistsOrInvalid(String token) {
-		return !authentications.containsKey(token) || !authenticationValid(token);
+	private boolean tokenDoNotExistsOrInvalid(String token) {
+		return !activeTokens.containsKey(token) || !checkTokenIsValid(token);
 	}
 
-	boolean authenticationValid(String token) {
-		Authentication authentication = authentications.get(token);
-		return authenticationIsValid(authentication);
+	boolean checkTokenIsValid(String token) {
+		ActiveTokenForUser activeTokenForUser = activeTokens.get(token);
+		return activeTokenForUserIsValid(activeTokenForUser);
 	}
 
-	private boolean authenticationIsValid(Authentication authentication) {
+	private boolean activeTokenForUserIsValid(ActiveTokenForUser activeTokenForUser) {
 		long currentTimestamp = System.currentTimeMillis();
-		return currentTimestamp <= authentication.validUntil();
+		return currentTimestamp <= activeTokenForUser.validUntil();
 	}
 
 	private User getAuthenticatedUser(String token) {
-		Authentication authentication = authentications.get(token);
+		ActiveTokenForUser authentication = activeTokens.get(token);
 		return authentication.user();
 	}
 
 	@Override
 	public AuthToken getAuthTokenForUserInfo(UserInfo userInfo) {
-		removeNoLongerValidAuthentications();
+		removeNoLongerValidActiveToken();
 		try {
 			return tryToGetAuthTokenForUserInfo(userInfo);
 		} catch (Exception e) {
@@ -99,32 +99,32 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	void removeNoLongerValidAuthentications() {
-		for (Entry<String, Authentication> entry : authentications.entrySet()) {
-			removeAuthenticationIfNoLongerValid(entry);
+	void removeNoLongerValidActiveToken() {
+		for (Entry<String, ActiveTokenForUser> entry : activeTokens.entrySet()) {
+			removeActiveTokenIfNoLongerValid(entry);
 		}
 	}
 
-	private void removeAuthenticationIfNoLongerValid(Entry<String, Authentication> entry) {
-		if (!authenticationIsValid(entry.getValue())) {
-			authentications.remove(entry.getKey());
+	private void removeActiveTokenIfNoLongerValid(Entry<String, ActiveTokenForUser> entry) {
+		if (!activeTokenForUserIsValid(entry.getValue())) {
+			activeTokens.remove(entry.getKey());
 		}
 	}
 
 	private AuthToken tryToGetAuthTokenForUserInfo(UserInfo userInfo) {
 		String generatedToken = generateRandomUUID();
 		String generatedTokenId = generateRandomUUID();
-		Authentication createdAuthentication = createNewAuthentication(generatedTokenId, userInfo);
-		authentications.put(generatedToken, createdAuthentication);
-		return createAuthToken(generatedToken, createdAuthentication);
+		ActiveTokenForUser activeToken = createActiveTokenForUser(generatedTokenId, userInfo);
+		activeTokens.put(generatedToken, activeToken);
+		return createAuthToken(generatedToken, activeToken);
 	}
 
-	private Authentication createNewAuthentication(String tokenId, UserInfo userInfo) {
+	private ActiveTokenForUser createActiveTokenForUser(String tokenId, UserInfo userInfo) {
 		User pickedUser = pickUser(userInfo);
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
 		long renewUntil = currentTime + RENEW_UNTIL_NO_MILLIS;
-		return new Authentication(tokenId, pickedUser, validUntil, renewUntil);
+		return new ActiveTokenForUser(tokenId, pickedUser, validUntil, renewUntil);
 	}
 
 	private User pickUser(UserInfo userInfo) {
@@ -132,11 +132,12 @@ public enum GatekeeperImp implements Gatekeeper {
 		return userPicker.pickUser(userInfo);
 	}
 
-	private AuthToken createAuthToken(String token, Authentication authentication) {
-		User user = authentication.user();
-		return new AuthToken(token, authentication.tokenId(), authentication.validUntil(),
-				authentication.renewUntil(), user.id, user.loginId,
-				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName));
+	private AuthToken createAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
+		User user = activeTokenForUser.user();
+		return new AuthToken(token, activeTokenForUser.tokenId(), activeTokenForUser.validUntil(),
+				activeTokenForUser.renewUntil(), user.id, user.loginId,
+				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName),
+				user.permissionUnitIds);
 	}
 
 	private String generateRandomUUID() {
@@ -150,25 +151,25 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private void throwErrorIfAuthTokenDoesNotExists(String token) {
-		if (!authentications.containsKey(token)) {
+		if (!activeTokens.containsKey(token)) {
 			throw createExceptionTokenNotValid();
 		}
 	}
 
 	private void removeAuthTokenIfUserIdMatches(String tokenId, String token) {
 		ensureUserIdMatchesTokensUserId(tokenId, token);
-		authentications.remove(token);
+		activeTokens.remove(token);
 	}
 
 	private void ensureUserIdMatchesTokensUserId(String tokenId, String token) {
-		Authentication authentication = authentications.get(token);
+		ActiveTokenForUser authentication = activeTokens.get(token);
 		if (!tokenId.equals(authentication.tokenId())) {
 			throw createExceptionTokenNotValid();
 		}
 	}
 
-	void onlyForTestSetAuthentication(String token, Authentication authentication) {
-		authentications.put(token, authentication);
+	void onlyForTestSetActiveTokenForUser(String token, ActiveTokenForUser activeTokenForUser) {
+		activeTokens.put(token, activeTokenForUser);
 
 	}
 
@@ -178,45 +179,45 @@ public enum GatekeeperImp implements Gatekeeper {
 		ensureUserIdMatchesTokensUserId(tokenId, oldToken);
 		ensureRenewUntilHasNotPassed(oldToken);
 		String newToken = generateRandomUUID();
-		Authentication newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
+		ActiveTokenForUser newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
 		return createAuthToken(newToken, newAuthentication);
 	}
 
-	private Authentication replaceOldToNewAuthentication(String token, String newToken) {
-		Authentication authentication = authentications.get(token);
-		Authentication newAuthentication = renewAuthentication(authentication);
+	private ActiveTokenForUser replaceOldToNewAuthentication(String token, String newToken) {
+		ActiveTokenForUser activeTokenForUser = activeTokens.get(token);
+		ActiveTokenForUser newAuthentication = renewAuthentication(activeTokenForUser);
 		storeNewAuthentication(newToken, newAuthentication);
 		return newAuthentication;
 	}
 
-	private Authentication renewAuthentication(Authentication authentication) {
+	private ActiveTokenForUser renewAuthentication(ActiveTokenForUser activeTokenForUser) {
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
-		return new Authentication(authentication.tokenId(), authentication.user(), validUntil,
-				authentication.renewUntil());
+		return new ActiveTokenForUser(activeTokenForUser.tokenId(), activeTokenForUser.user(),
+				validUntil, activeTokenForUser.renewUntil());
 	}
 
-	private void storeNewAuthentication(String newToken, Authentication newAuthentication) {
-		authentications.put(newToken, newAuthentication);
+	private void storeNewAuthentication(String newToken, ActiveTokenForUser newAuthentication) {
+		activeTokens.put(newToken, newAuthentication);
 	}
 
 	void ensureRenewUntilHasNotPassed(String token) {
-		if (!authenticationCanBeRenewed(token)) {
+		if (!tokenCanBeRenewed(token)) {
 			throw createExceptionTokenNotValid();
 		}
 	}
 
-	boolean authenticationCanBeRenewed(String token) {
-		Authentication authentication = authentications.get(token);
+	boolean tokenCanBeRenewed(String token) {
+		ActiveTokenForUser activeTokenForUser = activeTokens.get(token);
 		long currentTimestamp = System.currentTimeMillis();
-		return currentTimestamp <= authentication.renewUntil();
+		return currentTimestamp <= activeTokenForUser.renewUntil();
 	}
 
 	void onlyForTestEmptyAuthentications() {
-		authentications = new HashMap<>();
+		activeTokens = new HashMap<>();
 	}
 
-	Map<String, Authentication> onlyForTestGetAuthentications() {
-		return authentications;
+	Map<String, ActiveTokenForUser> onlyForTestGetActiveTokens() {
+		return activeTokens;
 	}
 }

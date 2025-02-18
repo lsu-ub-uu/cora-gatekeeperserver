@@ -31,7 +31,7 @@ public class AuthenticationTest {
 		User someUser = new User("someId");
 		long validUntil = 100L;
 		long renewUntil = 200L;
-		Authentication authentication = new Authentication("someTokenId", someUser, validUntil,
+		ActiveTokenForUser authentication = new ActiveTokenForUser("someTokenId", someUser, validUntil,
 				renewUntil);
 
 		assertEquals(authentication.tokenId(), "someTokenId");

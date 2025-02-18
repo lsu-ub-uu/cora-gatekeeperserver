@@ -70,7 +70,7 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testGetToken_Annotations() throws Exception {
+	public void testGetToken_Annotations() throws NoSuchMethodException {
 		AnnotationTestHelper annotationHelper = AnnotationTestHelper
 				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
 						TokenProviderEndpoint.class, "getAuthTokenForUserInfo", 1);
@@ -91,13 +91,36 @@ public class TokenProviderEndpointTest {
 
 	private String expectedAuthToken() {
 		String authToken = """
-				{"children":[{"name":"token","value":"someAuthToken"},
-				{"name":"tokenId","value":"someTokenId"},
-				{"name":"validUntil","value":"100"},
-				{"name":"renewUntil","value":"200"},
-				{"name":"idInUserStorage","value":"someIdFromStorage"},
-				{"name":"loginId","value":"someloginId"}],"name":"authToken"}""";
-		return authToken.replace("\n", "");
+				{
+				  "children": [
+				    {
+				      "name": "token",
+				      "value": "someAuthToken"
+				    },
+				    {
+				      "name": "tokenId",
+				      "value": "someTokenId"
+				    },
+				    {
+				      "name": "validUntil",
+				      "value": "100"
+				    },
+				    {
+				      "name": "renewUntil",
+				      "value": "200"
+				    },
+				    {
+				      "name": "idInUserStorage",
+				      "value": "someIdFromStorage"
+				    },
+				    {
+				      "name": "loginId",
+				      "value": "someloginId"
+				    }
+				  ],
+				  "name": "authToken"
+				}""";
+		return authToken.replace("\n", "").replace(" ", "");
 	}
 
 	private void assertResponseStatusIs(Status responseStatus) {
@@ -119,7 +142,7 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testRenewAuthToken_Annotations() throws Exception {
+	public void testRenewAuthToken_Annotations() throws NoSuchMethodException {
 		AnnotationTestHelper annotationHelper = AnnotationTestHelper
 				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
 						TokenProviderEndpoint.class, "renewAuthToken", 2);
@@ -131,14 +154,14 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testRenewAuthCallsCorrectMethod() throws Exception {
+	public void testRenewAuthCallsCorrectMethod() {
 		tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
 
 		gatekeeperSpy.MCR.assertCalledParametersReturn("renewAuthToken", TOKEN_ID, TOKEN);
 	}
 
 	@Test
-	public void testRenewAuthUnAuthorized() throws Exception {
+	public void testRenewAuthUnAuthorized() {
 		gatekeeperSpy.MRV.setAlwaysThrowException("renewAuthToken",
 				new AuthenticationException("error from spy"));
 
@@ -148,7 +171,7 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testRenewAuthTokenOK() throws Exception {
+	public void testRenewAuthTokenOK() {
 
 		response = tokenProviderEndpoint.renewAuthToken(TOKEN_ID, TOKEN);
 
@@ -159,7 +182,7 @@ public class TokenProviderEndpointTest {
 	}
 
 	@Test
-	public void testRemoveAuthToken_Annotations() throws Exception {
+	public void testRemoveAuthToken_Annotations() throws NoSuchMethodException {
 		AnnotationTestHelper annotationHelper = AnnotationTestHelper
 				.createAnnotationTestHelperForClassMethodNameAndNumOfParameters(
 						TokenProviderEndpoint.class, "removeAuthToken", 2);
