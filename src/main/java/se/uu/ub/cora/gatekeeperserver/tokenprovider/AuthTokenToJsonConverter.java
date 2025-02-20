@@ -132,7 +132,7 @@ public final class AuthTokenToJsonConverter {
 		JsonObjectBuilder permissionUnit = createObjectBuilderWithName("permissionUnit");
 		JsonArrayBuilder permissionUnitChildren = orgJsonBuilderFactoryAdapter.createArrayBuilder();
 		permissionUnit.addKeyJsonArrayBuilder(CHILDREN, permissionUnitChildren);
-		permissionUnit.addKeyString("repeatid", repeatId);
+		permissionUnit.addKeyString("repeatId", repeatId);
 
 		JsonObjectBuilder type = createObjectBuilderWithName("linkedRecordType");
 		type.addKeyString(VALUE, "permissionUnit");

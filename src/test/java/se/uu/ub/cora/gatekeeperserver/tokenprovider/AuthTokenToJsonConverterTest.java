@@ -116,7 +116,7 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "someLastName"
 				    },
 				    {
-				      "repeatid": "1",
+				      "repeatId": "1",
 				      "children": [
 				        {
 				          "name": "linkedRecordType",
@@ -182,7 +182,7 @@ public class AuthTokenToJsonConverterTest {
 				      "value": "someLastName"
 				    },
 				    {
-				      "repeatid": "1",
+				      "repeatId": "1",
 				      "children": [
 				        {
 				          "name": "linkedRecordType",
@@ -196,7 +196,7 @@ public class AuthTokenToJsonConverterTest {
 				      "name": "permissionUnit"
 				    },
 				    {
-				      "repeatid": "2",
+				      "repeatId": "2",
 				      "children": [
 				        {
 				          "name": "linkedRecordType",
