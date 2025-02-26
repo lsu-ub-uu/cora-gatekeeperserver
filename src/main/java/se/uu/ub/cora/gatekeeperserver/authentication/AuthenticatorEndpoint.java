@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -43,6 +43,7 @@ public class AuthenticatorEndpoint {
 		orgJsonBuilderFactoryAdapter = new OrgJsonBuilderFactoryAdapter();
 	}
 
+	// TODO: create getGuestUser method in gatekeeper, instead of using getUseForToken(null)
 	@GET
 	public Response getUserWithoutToken() {
 		return tryToGetUserForToken(null);
@@ -60,15 +61,27 @@ public class AuthenticatorEndpoint {
 
 	private Response tryToGetUserForToken(String token) {
 		User user = gatekeeper.getUserForToken(token);
-		String json = convertUserToJson(user);
+		String json = convertUserToCompactJson(user);
 		return Response.status(Response.Status.OK).entity(json).build();
 	}
 
-	private String convertUserToJson(User user) {
-		JsonObjectBuilder userBuilder = createObjectBuilderWithName(user.id);
-		JsonArrayBuilder userChildren = returnAndAddChildrenToBuilder(userBuilder);
-		addRolesPlusToUser(user, userChildren);
+	private String convertUserToCompactJson(User user) {
+		JsonObjectBuilder userBuilder = convertUserToJson(user);
 		return userBuilder.toJsonFormattedString();
+	}
+
+	private JsonObjectBuilder convertUserToJson(User user) {
+		JsonObjectBuilder userBuilder = createObjectBuilderWithName(user.id);
+		JsonArrayBuilder userChildren = createArrayBuildeWithObjectBuilder(userBuilder);
+		addUserRoles(user, userChildren);
+		addPermissionUnits(user, userChildren);
+		setActiveUser(user, userChildren);
+		return userBuilder;
+	}
+
+	private void setActiveUser(User user, JsonArrayBuilder userChildren) {
+		String status = user.active ? "active" : "inactive";
+		createAtomicElement("activeStatus", status, userChildren);
 	}
 
 	private JsonObjectBuilder createObjectBuilderWithName(String name) {
@@ -77,43 +90,48 @@ public class AuthenticatorEndpoint {
 		return roleBuilder;
 	}
 
-	private JsonArrayBuilder returnAndAddChildrenToBuilder(JsonObjectBuilder userBuilder) {
+	private JsonArrayBuilder createArrayBuildeWithObjectBuilder(JsonObjectBuilder userBuilder) {
 		JsonArrayBuilder userChildren = orgJsonBuilderFactoryAdapter.createArrayBuilder();
 		userBuilder.addKeyJsonArrayBuilder(CHILDREN, userChildren);
 		return userChildren;
 	}
 
-	private void addRolesPlusToUser(User user, JsonArrayBuilder userChildren) {
-		JsonArrayBuilder rolesPlusChildren = createRolesPlus(userChildren);
-
-		addRolesToRolesPlus(user, rolesPlusChildren);
+	private void addUserRoles(User user, JsonArrayBuilder userChildren) {
+		JsonArrayBuilder userRoleChildren = createUserRole(userChildren);
+		createAndAddUserRolesToPermissionRoles(user, userRoleChildren);
 	}
 
-	private JsonArrayBuilder createRolesPlus(JsonArrayBuilder userChildren) {
-		JsonObjectBuilder rolesPlus = createObjectBuilderWithName("rolesPlus");
-		userChildren.addJsonObjectBuilder(rolesPlus);
-		return returnAndAddChildrenToBuilder(rolesPlus);
+	private JsonArrayBuilder createUserRole(JsonArrayBuilder userChildren) {
+		JsonObjectBuilder userRoleBuilder = createObjectBuilderWithName("userRole");
+		userChildren.addJsonObjectBuilder(userRoleBuilder);
+		return createArrayBuildeWithObjectBuilder(userRoleBuilder);
 	}
 
-	private void addRolesToRolesPlus(User user, JsonArrayBuilder rolesPlusChildren) {
-		for (String role : user.roles) {
-			JsonObjectBuilder rolePlusBuilder = createRolePlus(rolesPlusChildren);
-			JsonArrayBuilder rolePlusChildren = returnAndAddChildrenToBuilder(rolePlusBuilder);
-			addRole(role, rolePlusChildren);
+	private void createAndAddUserRolesToPermissionRoles(User user,
+			JsonArrayBuilder permissionRoles) {
+		for (String roleId : user.roles) {
+			JsonObjectBuilder permissionRoleBuilder = createPermissionRoleBuilder(permissionRoles);
+			JsonArrayBuilder permissionRoleChildren = createArrayBuildeWithObjectBuilder(
+					permissionRoleBuilder);
+			createAtomicElement("id", roleId, permissionRoleChildren);
 		}
 	}
 
-	private JsonObjectBuilder createRolePlus(JsonArrayBuilder rolesPlusChildren) {
-		JsonObjectBuilder rolePlusBuilder = createObjectBuilderWithName("rolePlus");
-
-		rolesPlusChildren.addJsonObjectBuilder(rolePlusBuilder);
-		return rolePlusBuilder;
+	private JsonObjectBuilder createPermissionRoleBuilder(JsonArrayBuilder rolesPlusChildren) {
+		JsonObjectBuilder permissionRoleBuilder = createObjectBuilderWithName("permissionRole");
+		rolesPlusChildren.addJsonObjectBuilder(permissionRoleBuilder);
+		return permissionRoleBuilder;
 	}
 
-	private void addRole(String role, JsonArrayBuilder rolePlusChildren) {
-		JsonObjectBuilder roleBuilder = createObjectBuilderWithName("role");
-		rolePlusChildren.addJsonObjectBuilder(roleBuilder);
-		roleBuilder.addKeyString("value", role);
+	private void createAtomicElement(String atomicName, String atomicValue,
+			JsonArrayBuilder permissionRoleChildren) {
+		JsonObjectBuilder roleBuilder = createObjectBuilderWithName(atomicName);
+		permissionRoleChildren.addJsonObjectBuilder(roleBuilder);
+		roleBuilder.addKeyString("value", atomicValue);
 	}
 
+	private void addPermissionUnits(User user, JsonArrayBuilder userChildren) {
+		user.permissionUnitIds.forEach(permissionUnitId -> createAtomicElement("permissionUnit",
+				permissionUnitId, userChildren));
+	}
 }

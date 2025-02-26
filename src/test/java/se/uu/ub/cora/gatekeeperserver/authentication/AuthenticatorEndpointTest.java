@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2016, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -39,10 +39,11 @@ public class AuthenticatorEndpointTest {
 
 	@BeforeMethod
 	public void setUp() {
-		locator = new GateKeeperLocatorSpy();
 		gatekeeperSpy = new GatekeeperSpy();
+		locator = new GateKeeperLocatorSpy();
 		locator.setGatekeepSpy(gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
+
 		authenticatorEndpoint = new AuthenticatorEndpoint();
 	}
 
@@ -55,16 +56,62 @@ public class AuthenticatorEndpointTest {
 	}
 
 	@Test
-	public void testGetUserForToken() {
-		String token = "someToken";
-		response = authenticatorEndpoint.getUserForToken(token);
+	public void testGetUserWithActiveUser() {
+		setGetUserForTokenWithActiveUser();
+
+		response = authenticatorEndpoint.getUserForToken("someToken");
+
 		assertResponseStatusIs(Response.Status.OK);
 		assertEntityExists();
-		String expected = "{\"children\":[{\"children\":[{\"children\":["
-				+ "{\"name\":\"role\",\"value\":\"someRole1\"}],\"name\":\"rolePlus\"}"
-				+ ",{\"children\":[{\"name\":\"role\",\"value\":\"someRole2\"}]"
-				+ ",\"name\":\"rolePlus\"}],\"name\":\"rolesPlus\"}],\"name\":\"someId\"}";
-		assertEquals(response.getEntity(), expected);
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [],
+				      "name": "userRole"
+				    },
+				    {"name": "activeStatus", "value": "active"}
+				  ],
+				  "name": "someId"
+				}
+				""";
+		assertEquals(response.getEntity(), compactJson(expected));
+
+	}
+
+	private void setGetUserForTokenWithActiveUser() {
+		User user = new User("someId");
+		user.active = true;
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
+	}
+
+	@Test
+	public void testGetUserWithInactiveUser() {
+		setGetUserForTokenWithInactiveUser();
+
+		response = authenticatorEndpoint.getUserForToken("someToken");
+
+		assertResponseStatusIs(Response.Status.OK);
+		assertEntityExists();
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [],
+				      "name": "userRole"
+				    },
+				    {"name": "activeStatus", "value": "inactive"}
+				  ],
+				  "name": "someId"
+				}
+				""";
+		assertEquals(response.getEntity(), compactJson(expected));
+	}
+
+	private void setGetUserForTokenWithInactiveUser() {
+		User user = new User("someId");
+		user.active = false;
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
 	}
 
 	private void assertResponseStatusIs(Status responseStatus) {
@@ -86,39 +133,164 @@ public class AuthenticatorEndpointTest {
 	}
 
 	@Test
+	public void testGetUserForTokenWithUserRoles() {
+		setGetUserForTokenWithUserWithRoles();
+
+		response = authenticatorEndpoint.getUserForToken("someToken");
+
+		assertResponseStatusIs(Response.Status.OK);
+		assertEntityExists();
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [
+				        {
+				          "children": [ {"name": "id", "value": "someRole1"} ],
+				          "name": "permissionRole"
+				        },
+				        {
+				          "children": [ {"name": "id", "value": "someRole2"} ],
+				          "name": "permissionRole"
+				        }
+				      ],
+				      "name": "userRole"
+				    },
+				    {"name": "activeStatus", "value": "active"}
+				  ],
+				  "name": "someId"
+				}""";
+		assertEquals(response.getEntity(), compactJson(expected));
+	}
+
+	private void setGetUserForTokenWithUserWithRoles() {
+		User user = new User("someId");
+		user.active = true;
+		user.roles.add("someRole1");
+		user.roles.add("someRole2");
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
+	}
+
+	@Test
 	public void testNoTokenShouldBeGuest() {
-		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken",
-				() -> createGuestUser());
+		setGetUserForTokenWithGuestUser();
 
 		response = authenticatorEndpoint.getUserForToken(null);
 
 		assertResponseIsCorrectGuestUser();
 	}
 
-	@Test
-	public void testGetUserWithoutTokenShouldBeGuest() {
-		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken",
-				() -> createGuestUser());
-		response = authenticatorEndpoint.getUserWithoutToken();
-		assertResponseIsCorrectGuestUser();
+	private void setGetUserForTokenWithGuestUser() {
+		User user = new User("guestUser");
+		user.active = true;
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
 	}
 
-	private User createGuestUser() {
-		User user = new User("12345");
-		user.roles.add("someRole112345");
-		user.roles.add("someRole212345");
-		return user;
+	@Test
+	public void testGetUserWithoutTokenShouldBeGuest() {
+		setGetUserForTokenWithGuestUser();
+
+		response = authenticatorEndpoint.getUserWithoutToken();
+
+		assertResponseIsCorrectGuestUser();
 	}
 
 	private void assertResponseIsCorrectGuestUser() {
 		assertResponseStatusIs(Response.Status.OK);
 		assertEntityExists();
-		String expected = "{\"children\":[{\"children\":["
-				+ "{\"children\":[{\"name\":\"role\",\"value\":\"someRole112345\"}]"
-				+ ",\"name\":\"rolePlus\"},{\"children\":["
-				+ "{\"name\":\"role\",\"value\":\"someRole212345\"}]"
-				+ ",\"name\":\"rolePlus\"}],\"name\":\"rolesPlus\"}]" + ",\"name\":\"12345\"}";
-		assertEquals(response.getEntity(), expected);
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [],
+				      "name": "userRole"
+				    },
+				    {"name": "activeStatus", "value": "active"}
+				  ],
+				  "name": "guestUser"
+				}""";
+		assertEquals(response.getEntity(), compactJson(expected));
 	}
 
+	@Test
+	public void testGetUserWithPermissionUnits() {
+		setGetUserForTokenWithUserWithPermissionUnits();
+
+		response = authenticatorEndpoint.getUserForToken("someToken");
+
+		assertResponseStatusIs(Response.Status.OK);
+		assertEntityExists();
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [],
+				      "name": "userRole"
+				    },
+				    {"name": "permissionUnit", "value": "somePermissionUnit001"},
+				    {"name": "permissionUnit", "value": "somePermissionUnit002"},
+				    {"name": "activeStatus", "value": "active"}
+				  ],
+				  "name": "someId"
+				}
+				""";
+		assertEquals(response.getEntity(), compactJson(expected));
+
+	}
+
+	private void setGetUserForTokenWithUserWithPermissionUnits() {
+		User user = new User("someId");
+		user.active = true;
+		user.permissionUnitIds.add("somePermissionUnit001");
+		user.permissionUnitIds.add("somePermissionUnit002");
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
+	}
+
+	@Test
+	public void testGetUserWithUserWithAllFieldsSet() {
+		setGetUserForTokenWithAllFieldsSet();
+
+		response = authenticatorEndpoint.getUserForToken("someToken");
+
+		assertResponseStatusIs(Response.Status.OK);
+		assertEntityExists();
+		String expected = """
+				{
+				  "children": [
+				    {
+				      "children": [
+				        {
+				          "children": [ {"name": "id", "value": "someRole1"} ],
+				          "name": "permissionRole"
+				        },
+				        {
+				          "children": [ {"name": "id", "value": "someRole2"} ],
+				          "name": "permissionRole"
+				        }
+				      ],
+				      "name": "userRole"
+				    },
+				    {"name": "permissionUnit", "value": "somePermissionUnit001"},
+				    {"name": "permissionUnit", "value": "somePermissionUnit002"},
+				    {"name": "activeStatus", "value": "active"}
+				  ],
+				  "name": "someId"
+				}""";
+		assertEquals(response.getEntity(), compactJson(expected));
+
+	}
+
+	private void setGetUserForTokenWithAllFieldsSet() {
+		User user = new User("someId");
+		user.active = true;
+		user.roles.add("someRole1");
+		user.roles.add("someRole2");
+		user.permissionUnitIds.add("somePermissionUnit001");
+		user.permissionUnitIds.add("somePermissionUnit002");
+		gatekeeperSpy.MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> user);
+	}
+
+	private String compactJson(String json) {
+		return json.replace("\n", "").replace("\r", "").replace(" ", "");
+	}
 }

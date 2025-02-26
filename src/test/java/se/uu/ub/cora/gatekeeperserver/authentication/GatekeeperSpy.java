@@ -39,16 +39,13 @@ public class GatekeeperSpy implements Gatekeeper {
 
 	public GatekeeperSpy() {
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("getUserForToken", () -> createUser());
-		MRV.setDefaultReturnValuesSupplier("getAuthTokenForUserInfo", () -> createAuthToken());
-		MRV.setDefaultReturnValuesSupplier("renewAuthToken", () -> createAuthToken());
+		MRV.setDefaultReturnValuesSupplier("getUserForToken", this::createUser);
+		MRV.setDefaultReturnValuesSupplier("getAuthTokenForUserInfo", this::createAuthToken);
+		MRV.setDefaultReturnValuesSupplier("renewAuthToken", this::createAuthToken);
 	}
 
 	private User createUser() {
-		User user = new User("someId");
-		user.roles.add("someRole1");
-		user.roles.add("someRole2");
-		return user;
+		return new User("someId");
 	}
 
 	private AuthToken createAuthToken() {

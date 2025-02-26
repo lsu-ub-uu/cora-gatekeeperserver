@@ -41,6 +41,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
 	private Map<String, ActiveTokenForUser> activeTokens = new ConcurrentHashMap<>();
 
+	// TODO: create getGuestUser method, instead of using getUseForToken(null)
 	@Override
 	public User getUserForToken(String token) {
 		if (token == null) {
