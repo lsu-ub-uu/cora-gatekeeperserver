@@ -40,6 +40,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
 	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
 	private Map<String, ActiveTokenForUser> activeTokens = new ConcurrentHashMap<>();
+	private Map<String, User> activeUsers = new ConcurrentHashMap<>();
 
 	// TODO: create getGuestUser method, instead of using getUseForToken(null)
 	@Override
@@ -86,7 +87,7 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private User getAuthenticatedUser(String token) {
 		ActiveTokenForUser authentication = activeTokens.get(token);
-		return authentication.user();
+		return activeUsers.get(authentication.userId());
 	}
 
 	@Override
@@ -109,23 +110,25 @@ public enum GatekeeperImp implements Gatekeeper {
 	private void removeActiveTokenIfNoLongerValid(Entry<String, ActiveTokenForUser> entry) {
 		if (!activeTokenForUserIsValid(entry.getValue())) {
 			activeTokens.remove(entry.getKey());
+			// TODO: remove user from activeUsers
 		}
 	}
 
 	private AuthToken tryToGetAuthTokenForUserInfo(UserInfo userInfo) {
 		String generatedToken = generateRandomUUID();
 		String generatedTokenId = generateRandomUUID();
-		ActiveTokenForUser activeToken = createActiveTokenForUser(generatedTokenId, userInfo);
+		User pickedUser = pickUser(userInfo);
+		ActiveTokenForUser activeToken = createActiveTokenForUser(generatedTokenId, pickedUser.id);
 		activeTokens.put(generatedToken, activeToken);
-		return createAuthToken(generatedToken, activeToken);
+		activeUsers.put(pickedUser.id, pickedUser);
+		return generateAuthToken(generatedToken, activeToken);
 	}
 
-	private ActiveTokenForUser createActiveTokenForUser(String tokenId, UserInfo userInfo) {
-		User pickedUser = pickUser(userInfo);
+	private ActiveTokenForUser createActiveTokenForUser(String tokenId, String userId) {
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
 		long renewUntil = currentTime + RENEW_UNTIL_NO_MILLIS;
-		return new ActiveTokenForUser(tokenId, pickedUser, validUntil, renewUntil);
+		return new ActiveTokenForUser(tokenId, userId, validUntil, renewUntil);
 	}
 
 	private User pickUser(UserInfo userInfo) {
@@ -133,8 +136,9 @@ public enum GatekeeperImp implements Gatekeeper {
 		return userPicker.pickUser(userInfo);
 	}
 
-	private AuthToken createAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
-		User user = activeTokenForUser.user();
+	private AuthToken generateAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
+		String userId = activeTokenForUser.userId();
+		User user = activeUsers.get(userId);
 		return new AuthToken(token, activeTokenForUser.tokenId(), activeTokenForUser.validUntil(),
 				activeTokenForUser.renewUntil(), user.id, user.loginId,
 				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName),
@@ -159,7 +163,13 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private void removeAuthTokenIfUserIdMatches(String tokenId, String token) {
 		ensureUserIdMatchesTokensUserId(tokenId, token);
+		removeActiveTokenAndUser(token);
+	}
+
+	private void removeActiveTokenAndUser(String token) {
+		ActiveTokenForUser activeTokenForUser = activeTokens.get(token);
 		activeTokens.remove(token);
+		activeUsers.remove(activeTokenForUser.userId());
 	}
 
 	private void ensureUserIdMatchesTokensUserId(String tokenId, String token) {
@@ -169,9 +179,10 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	void onlyForTestSetActiveTokenForUser(String token, ActiveTokenForUser activeTokenForUser) {
+	void onlyForTestSetActiveTokenAndActiveUsers(String token,
+			ActiveTokenForUser activeTokenForUser, User activeUser) {
 		activeTokens.put(token, activeTokenForUser);
-
+		activeUsers.put(activeUser.id, activeUser);
 	}
 
 	@Override
@@ -181,7 +192,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		ensureRenewUntilHasNotPassed(oldToken);
 		String newToken = generateRandomUUID();
 		ActiveTokenForUser newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
-		return createAuthToken(newToken, newAuthentication);
+		return generateAuthToken(newToken, newAuthentication);
 	}
 
 	private ActiveTokenForUser replaceOldToNewAuthentication(String token, String newToken) {
@@ -194,7 +205,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private ActiveTokenForUser renewAuthentication(ActiveTokenForUser activeTokenForUser) {
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
-		return new ActiveTokenForUser(activeTokenForUser.tokenId(), activeTokenForUser.user(),
+		return new ActiveTokenForUser(activeTokenForUser.tokenId(), activeTokenForUser.userId(),
 				validUntil, activeTokenForUser.renewUntil());
 	}
 
@@ -220,5 +231,9 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	Map<String, ActiveTokenForUser> onlyForTestGetActiveTokens() {
 		return activeTokens;
+	}
+
+	Map<String, User> onlyForTestGetActiveUsers() {
+		return activeUsers;
 	}
 }

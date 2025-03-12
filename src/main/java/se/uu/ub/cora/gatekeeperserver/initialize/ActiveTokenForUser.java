@@ -18,8 +18,6 @@
  */
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
-import se.uu.ub.cora.gatekeeper.user.User;
-
-public record ActiveTokenForUser(String tokenId, User user, long validUntil, long renewUntil) {
+public record ActiveTokenForUser(String tokenId, String userId, long validUntil, long renewUntil) {
 
 }
