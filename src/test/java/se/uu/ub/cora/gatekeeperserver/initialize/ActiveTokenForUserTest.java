@@ -26,14 +26,12 @@ public class ActiveTokenForUserTest {
 
 	@Test
 	public void createAuthentication() {
-		long validUntil = 100L;
-		long renewUntil = 200L;
 		ActiveTokenForUser authentication = new ActiveTokenForUser("someTokenId", "someUserLoginId",
-				validUntil, renewUntil);
+				100L, 200L);
 
 		assertEquals(authentication.tokenId(), "someTokenId");
 		assertEquals(authentication.loginId(), "someUserLoginId");
-		assertEquals(authentication.validUntil(), validUntil);
-		assertEquals(authentication.renewUntil(), renewUntil);
+		assertEquals(authentication.validUntil(), 100L);
+		assertEquals(authentication.renewUntil(), 200L);
 	}
 }
