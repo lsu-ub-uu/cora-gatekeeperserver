@@ -22,20 +22,17 @@ import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.gatekeeper.user.User;
-
-public class AuthenticationTest {
+public class ActiveTokenForUserTest {
 
 	@Test
-	public void createAuthentication() throws Exception {
-		User someUser = new User("someId");
+	public void createAuthentication() {
 		long validUntil = 100L;
 		long renewUntil = 200L;
-		ActiveTokenForUser authentication = new ActiveTokenForUser("someTokenId", someUser, validUntil,
-				renewUntil);
+		ActiveTokenForUser authentication = new ActiveTokenForUser("someTokenId", "someUserLoginId",
+				validUntil, renewUntil);
 
 		assertEquals(authentication.tokenId(), "someTokenId");
-		assertEquals(authentication.user(), someUser);
+		assertEquals(authentication.loginId(), "someUserLoginId");
 		assertEquals(authentication.validUntil(), validUntil);
 		assertEquals(authentication.renewUntil(), renewUntil);
 	}

@@ -73,4 +73,10 @@ public class GatekeeperSpy implements Gatekeeper {
 		MCR.addCall("tokenId", tokenId, "token", token);
 	}
 
+	@Override
+	public void dataChanged(String type, String id, String action) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

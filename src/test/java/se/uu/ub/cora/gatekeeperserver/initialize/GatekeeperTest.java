@@ -22,6 +22,7 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -37,6 +39,7 @@ import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
+import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperImp.ActiveUser;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
@@ -44,7 +47,7 @@ import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
 public class GatekeeperTest {
 	private static final String TOKEN = "someToken";
 	private static final String TOKEN_ID = "someTokenId";
-	private static final String USER_ID = "someId";
+	private static final String USER_RECORD_TYPE = "user";
 	private static final long THIRTY_MINUTES = 1800000L;
 	private static final long PRECISION = 5000L;
 	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
@@ -53,7 +56,8 @@ public class GatekeeperTest {
 	private GatekeeperImp gatekeeper;
 	private LoggerFactorySpy loggerFactory;
 	private UserInfo userInfo;
-	private User someUser;
+	private User userElly;
+	private User userRudolf;
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -62,16 +66,30 @@ public class GatekeeperTest {
 		userPickerInstanceProvider = new UserPickerInstanceProviderSpy();
 		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProvider);
 		userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
-		someUser = createUserWithNames();
+		userElly = createUserForElly();
+		userRudolf = createUserForRudolf();
 
 		gatekeeper = GatekeeperImp.INSTANCE;
+	}
+
+	@AfterMethod
+	public void afterMethod() {
 		gatekeeper.onlyForTestEmptyAuthentications();
 	}
 
-	private User createUserWithNames() {
-		User aUser = new User(USER_ID);
-		aUser.firstName = "someFirstName";
-		aUser.lastName = "someLastName";
+	private User createUserForElly() {
+		return createGenericUser("Elly");
+	}
+
+	private User createUserForRudolf() {
+		return createGenericUser("Rudolf");
+	}
+
+	private User createGenericUser(String name) {
+		User aUser = new User("some" + name + "UserId");
+		aUser.firstName = "some" + name + "FirstName";
+		aUser.lastName = "some" + name + "LastName";
+		aUser.loginId = "some" + name + "LoginId";
 		return aUser;
 	}
 
@@ -96,7 +114,7 @@ public class GatekeeperTest {
 
 	private UserPickerSpy assertAndReturnUserPickerProviderWasUsedToGetUserPicker() {
 		userPickerInstanceProvider.MCR.assertMethodWasCalled("getUserPicker");
-		return (UserPickerSpy) userPickerInstanceProvider.MCR.getReturnValue("getUserPicker", 0);
+		return getUserPickerSpy();
 	}
 
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
@@ -139,7 +157,7 @@ public class GatekeeperTest {
 
 	@Test
 	public void testGetAuthTokenForUserInfo_noNames() {
-		User user = new User("user");
+		User user = new User(USER_RECORD_TYPE);
 		user.loginId = "loginId";
 		setUserToReturnFromUserProviderSpy(user);
 
@@ -219,8 +237,8 @@ public class GatekeeperTest {
 	@Test
 	public void testOldTokensRemovedWhenCreatingANew() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilInThePast(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 1);
 		assertTrue(gatekeeper.onlyForTestGetActiveTokens().containsKey(TOKEN));
 
@@ -232,11 +250,12 @@ public class GatekeeperTest {
 
 	}
 
-	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "Token not valid")
+	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
+			+ "Token not valid")
 	public void testgetUserForTokenNotValid() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilInThePast(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
 		gatekeeper.getUserForToken(TOKEN);
 	}
@@ -303,8 +322,8 @@ public class GatekeeperTest {
 			+ "Token not valid")
 	public void testRenewUntilAuthTokenAfterValidUntil() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilInThePast(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
 		gatekeeper.renewAuthToken(activeTokenForUser.tokenId(), TOKEN);
 	}
@@ -313,8 +332,8 @@ public class GatekeeperTest {
 			+ "Token not valid")
 	public void testRenewUntilAuthTokenAfterRenewUntil() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserRenewUntilInThePast(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
 		gatekeeper.renewAuthToken(activeTokenForUser.tokenId(), TOKEN);
 	}
@@ -322,8 +341,8 @@ public class GatekeeperTest {
 	@Test
 	public void testRenewAuthTokenSetCorrectData() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
 		AuthToken newAuthToken = gatekeeper.renewAuthToken(activeTokenForUser.tokenId(), TOKEN);
 
@@ -333,17 +352,17 @@ public class GatekeeperTest {
 		assertNotEquals(newAuthToken.validUntil(), activeTokenForUser.validUntil());
 		assertTimestamp(newAuthToken.validUntil(), VALID_UNTIL_NO_MILLIS);
 		assertEquals(newAuthToken.renewUntil(), activeTokenForUser.renewUntil());
-		assertEquals(newAuthToken.idInUserStorage(), someUser.id);
-		assertEquals(newAuthToken.loginId(), someUser.loginId);
-		assertEquals(newAuthToken.firstName().get(), someUser.firstName);
-		assertEquals(newAuthToken.lastName().get(), someUser.lastName);
+		assertEquals(newAuthToken.idInUserStorage(), userElly.id);
+		assertEquals(newAuthToken.loginId(), userElly.loginId);
+		assertEquals(newAuthToken.firstName().get(), userElly.firstName);
+		assertEquals(newAuthToken.lastName().get(), userElly.lastName);
 	}
 
 	@Test
 	public void testRenewAuthTokenOldTokenShouldStillWork() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
 		AuthToken renewedAuthToken = gatekeeper.renewAuthToken(activeTokenForUser.tokenId(), TOKEN);
 
@@ -357,53 +376,184 @@ public class GatekeeperTest {
 	@Test
 	public void testRenewTokenIsAbleToAuthenticateWithNewAuthToken() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-				someUser.id);
+				userElly.loginId);
 		String oldToken = TOKEN;
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(oldToken, activeTokenForUser, someUser);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(oldToken, activeTokenForUser, userElly);
 
 		AuthToken newAuthToken = gatekeeper.renewAuthToken(activeTokenForUser.tokenId(), oldToken);
 
 		gatekeeper.getUserForToken(newAuthToken.token());
 	}
 
-	private ActiveTokenForUser createActiveTokenForUserValidUntilInThePast(String userId) {
+	@Test
+	public void testDataChanged_create() {
+		gatekeeper.dataChanged(USER_RECORD_TYPE, "someUserId", "create");
+
+		userPickerInstanceProvider.MCR.assertMethodNotCalled("getUserPicker");
+	}
+
+	private UserPickerSpy getUserPickerSpy() {
+		return (UserPickerSpy) userPickerInstanceProvider.MCR.getReturnValue("getUserPicker", 0);
+	}
+
+	@Test
+	public void testDataChanged_update_notFound() {
+		setupAnActiveUser(TOKEN, userElly);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, "someUserId", "update");
+
+		userPickerInstanceProvider.MCR.assertMethodNotCalled("getUserPicker");
+	}
+
+	@Test
+	public void testDataChanged_update_wrongRecordType() {
+		setupAnActiveUser(TOKEN, userElly);
+
+		gatekeeper.dataChanged("someRecordType", userElly.id, "update");
+
+		userPickerInstanceProvider.MCR.assertMethodNotCalled("getUserPicker");
+
+	}
+
+	@Test
+	public void testDataChanged_update_found() {
+		setupAnActiveUser(TOKEN, userElly);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "update");
+
+		userPickerInstanceProvider.MCR.assertMethodWasCalled("getUserPicker");
+		UserPickerSpy userPickerSpy = getUserPickerSpy();
+		userPickerSpy.MCR.assertMethodWasCalled("pickUser");
+
+		var userInfoToGetUpdatedUser = (UserInfo) userPickerSpy.MCR
+				.getParameterForMethodAndCallNumberAndParameter("pickUser", 0, "userInfo");
+		assertEquals(userInfoToGetUpdatedUser.idInUserStorage, userElly.id);
+
+		var updatedUserFromStorage = userPickerSpy.MCR.getReturnValue("pickUser", 0);
+
+		Map<String, ActiveUser> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
+		User userInCache = activeUsers.get(userElly.loginId).user;
+		assertSame(userInCache, updatedUserFromStorage);
+
+	}
+
+	@Test
+	public void testDataChanged_delete_notFound() {
+		setupAnActiveUser(TOKEN, userElly);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, "someUserId", "delete");
+
+		Map<String, ActiveUser> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
+		assertTrue(activeUsers.containsKey(userElly.loginId));
+	}
+
+	@Test
+	public void testDataChanged_delete_found() {
+		setupAnActiveUser(TOKEN, userElly);
+
+		try {
+			gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "delete");
+			gatekeeper.getUserForToken(TOKEN);
+			fail();
+		} catch (AuthenticationException e) {
+			assertActiveUserAndTokenHaveBeenRemovedFromGatekeeper(e);
+		}
+	}
+
+	@Test
+	public void testMultipleLogInAndDataChanges() {
+		setupAnActiveUser("tokenElly_1", userElly);
+		setupAnActiveUser("tokenElly_2", userElly);
+
+		setupAnActiveUser("tokenRudolf_1", userRudolf);
+		setupAnActiveUser("tokenRudolf_2", userRudolf);
+
+		assertSame(gatekeeper.getUserForToken("tokenRudolf_1"), userRudolf);
+		assertSame(gatekeeper.getUserForToken("tokenRudolf_2"), userRudolf);
+		assertSame(gatekeeper.getUserForToken("tokenElly_1"), userElly);
+		assertSame(gatekeeper.getUserForToken("tokenElly_2"), userElly);
+		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 4);
+		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 2);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, userRudolf.id, "update");
+
+		assertNotSame(gatekeeper.getUserForToken("tokenRudolf_1"), userRudolf);
+		assertNotSame(gatekeeper.getUserForToken("tokenRudolf_2"), userRudolf);
+		assertEquals(gatekeeper.getUserForToken("tokenRudolf_1").id, "someSomeUserUserId");
+		assertEquals(gatekeeper.getUserForToken("tokenRudolf_2").id, "someSomeUserUserId");
+		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 4);
+		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 2);
+
+		gatekeeper.removeAuthToken(TOKEN_ID, "tokenRudolf_2");
+
+		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 3);
+		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 2);
+
+		gatekeeper.removeAuthToken(TOKEN_ID, "tokenRudolf_1");
+
+		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 2);
+		printActiveUsers();
+		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 1);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "delete");
+		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 0);
+		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 0);
+	}
+
+	private void printActiveUsers() {
+		for (ActiveUser activeUser : gatekeeper.onlyForTestGetActiveUsers().values()) {
+			System.out.println(activeUser.user.loginId + ", " + activeUser.counter);
+		}
+	}
+
+	private void assertActiveUserAndTokenHaveBeenRemovedFromGatekeeper(AuthenticationException e) {
+		assertEquals(e.getMessage(), "Token not valid");
+		assertTrue(gatekeeper.onlyForTestGetActiveTokens().isEmpty());
+		assertTrue(gatekeeper.onlyForTestGetActiveUsers().isEmpty());
+	}
+
+	private void setupAnActiveUser(String token, User user) {
+		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
+				user.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(token, activeTokenForUser, user);
+	}
+
+	private ActiveTokenForUser createActiveTokenForUserValidUntilInThePast(String loginId) {
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp - THIRTY_MINUTES;
 		long renewUntil = currentTimestamp + THIRTY_MINUTES;
-		return new ActiveTokenForUser(TOKEN_ID, userId, validUntil, renewUntil);
+		return new ActiveTokenForUser(TOKEN_ID, loginId, validUntil, renewUntil);
 	}
 
 	private ActiveTokenForUser createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-			String userId) {
+			String loginId) {
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp + THIRTY_MINUTES;
 		long renewUntil = currentTimestamp + THIRTY_MINUTES;
-		return new ActiveTokenForUser(TOKEN_ID, userId, validUntil, renewUntil);
+		return new ActiveTokenForUser(TOKEN_ID, loginId, validUntil, renewUntil);
 	}
 
-	private ActiveTokenForUser createActiveTokenForUserRenewUntilInThePast(String userId) {
+	private ActiveTokenForUser createActiveTokenForUserRenewUntilInThePast(String loginId) {
 		long currentTimestamp = System.currentTimeMillis();
 		long validUntil = currentTimestamp + THIRTY_MINUTES;
 		long renewUntil = currentTimestamp - THIRTY_MINUTES;
-		return new ActiveTokenForUser(TOKEN_ID, userId, validUntil, renewUntil);
+		return new ActiveTokenForUser(TOKEN_ID, loginId, validUntil, renewUntil);
 	}
 
 	@Test
 	public void testOnlyForTestSetAuthToken() {
-		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+		setupAnActiveUser(TOKEN, userElly);
 
-		assertEquals(gatekeeper.getUserForToken(TOKEN), someUser);
+		assertEquals(gatekeeper.getUserForToken(TOKEN), userElly);
 	}
 
 	@Test
-	public void testOnlyForTestGetActiveUsers() throws Exception {
+	public void testOnlyForTestGetActiveUsers() {
 		ActiveTokenForUser activeTokenForUser = createActiveTokenForUserValidUntilAndRenewUntilInTheFuture(
-				someUser.id);
-		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, someUser);
+				userElly.loginId);
+		gatekeeper.onlyForTestSetActiveTokenAndActiveUsers(TOKEN, activeTokenForUser, userElly);
 
-		Map<String, User> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
+		Map<String, ActiveUser> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
 
 		assertEquals(activeUsers.size(), 1);
 	}

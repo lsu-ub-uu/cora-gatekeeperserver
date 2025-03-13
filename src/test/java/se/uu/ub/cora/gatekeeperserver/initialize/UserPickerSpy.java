@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,8 +18,6 @@
  */
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
-import java.util.function.Supplier;
-
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.picker.UserPicker;
 import se.uu.ub.cora.gatekeeper.user.User;
@@ -32,13 +30,16 @@ public class UserPickerSpy implements UserPicker {
 
 	public UserPickerSpy() {
 		MCR.useMRV(MRV);
-		User guest = new User("guest");
-		MRV.setDefaultReturnValuesSupplier("pickGuest", (Supplier<User>) () -> guest);
-		User user = new User("user");
-		user.loginId = "loginId";
-		user.firstName = "firstName";
-		user.lastName = "lastName";
-		MRV.setDefaultReturnValuesSupplier("pickUser", (Supplier<User>) () -> user);
+		MRV.setDefaultReturnValuesSupplier("pickGuest", () -> createGenericUser("Guest"));
+		MRV.setDefaultReturnValuesSupplier("pickUser", () -> createGenericUser("SomeUser"));
+	}
+
+	private User createGenericUser(String name) {
+		User aUser = new User("some" + name + "UserId");
+		aUser.firstName = "some" + name + "FirstName";
+		aUser.lastName = "some" + name + "LastName";
+		aUser.loginId = "some" + name + "LoginId";
+		return aUser;
 	}
 
 	@Override

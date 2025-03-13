@@ -80,4 +80,19 @@ public interface Gatekeeper {
 	 */
 	void removeAuthToken(String tokenId, String token);
 
+	/**
+	 * dataChanged method is intended to inform gatekeeper about data that is changed in storage.
+	 * This is to make it possible to implement a cached data from storage and update relevant
+	 * records when data is changed. This change can be done by processes running in the same system
+	 * or by processes running on other servers.
+	 * 
+	 * @param type
+	 *            A String with the records type
+	 * @param id
+	 *            A String with the records id
+	 * @param action
+	 *            A String with the action of how the data was changed ("create", "update" or
+	 *            "delete").
+	 */
+	void dataChanged(String type, String id, String action);
 }
