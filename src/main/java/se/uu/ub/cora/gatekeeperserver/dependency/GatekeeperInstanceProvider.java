@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Uppsala University Library
+ * Copyright 2015, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -38,4 +38,8 @@ public final class GatekeeperInstanceProvider {
 		return locator.locateGatekeeper();
 	}
 
+	public static void dataChanged(String type, String id, String action) {
+		Gatekeeper gatekeeper = getGatekeeper();
+		gatekeeper.dataChanged(type, id, action);
+	}
 }

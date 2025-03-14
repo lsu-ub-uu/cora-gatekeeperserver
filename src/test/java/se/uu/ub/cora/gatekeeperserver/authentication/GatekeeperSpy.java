@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2024 Uppsala University Library
+ * Copyright 2016, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -75,8 +75,7 @@ public class GatekeeperSpy implements Gatekeeper {
 
 	@Override
 	public void dataChanged(String type, String id, String action) {
-		// TODO Auto-generated method stub
-
+		MCR.addCall("type", type, "id", id, "action", action);
 	}
 
 }

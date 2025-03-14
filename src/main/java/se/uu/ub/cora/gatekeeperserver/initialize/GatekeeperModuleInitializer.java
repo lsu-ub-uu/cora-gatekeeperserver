@@ -70,6 +70,5 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	private void startLocator() {
 		GatekeeperLocator locator = new GatekeeperLocatorImp();
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
-		// GatekeeperImp.INSTANCE.setUserPickerProvider(userPickerProvider);
 	}
 }
