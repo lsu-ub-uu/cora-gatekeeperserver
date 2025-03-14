@@ -250,28 +250,55 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	@Override
 	public void dataChanged(String type, String id, String action) {
+		// TODO: Vi behöver hantera fallet om loginId ändras i användare. Då behöver man byta
+		// loginId i alla activeTokens och i key för activeUsers (eller kan vi lösa problemet på ett
+		// annat sett)
 		if ("user".equals(type) && "update".equals(action)) {
-			for (ActiveUser activeUser : activeUsers.values()) {
-				String activeUserId = activeUser.user.id;
-				if (activeUserId.equals(id)) {
-					UserPicker userPicker = UserPickerProvider.getUserPicker();
-					UserInfo userInfo = UserInfo.withIdInUserStorage(activeUserId);
-					User pickedUser = userPicker.pickUser(userInfo);
-					activeUser.user = pickedUser;
-				}
-			}
+			updateRelatedUsersDataFromStorage(id);
 		}
 		if ("user".equals(type) && "delete".equals(action)) {
-			for (ActiveUser activeUser : activeUsers.values()) {
-				String activeUserId = activeUser.user.id;
-				if (activeUserId.equals(id)) {
-					String activeUserLoginId = activeUser.user.loginId;
-					activeTokens.values().removeIf(
-							activeToken -> activeToken.loginId().equals(activeUserLoginId));
-					activeUsers.remove(activeUserLoginId);
-				}
-			}
+			deleteRelatedUsersFromCache(id);
 		}
+	}
+
+	private void deleteRelatedUsersFromCache(String id) {
+		for (ActiveUser activeUser : activeUsers.values()) {
+			possiblyDeleteUserFromCache(id, activeUser);
+		}
+	}
+
+	private void possiblyDeleteUserFromCache(String id, ActiveUser activeUser) {
+		String activeUserId = activeUser.user.id;
+		if (activeUserId.equals(id)) {
+			deleteUserFromCache(activeUser);
+		}
+	}
+
+	private void deleteUserFromCache(ActiveUser activeUser) {
+		String activeUserLoginId = activeUser.user.loginId;
+		activeTokens.values().removeIf(
+				activeToken -> activeToken.loginId().equals(activeUserLoginId));
+		activeUsers.remove(activeUserLoginId);
+	}
+
+	private void updateRelatedUsersDataFromStorage(String id) {
+		for (ActiveUser activeUser : activeUsers.values()) {
+			possiblyUpdateUsersDataFromStorage(id, activeUser);
+		}
+	}
+
+	private void possiblyUpdateUsersDataFromStorage(String id, ActiveUser activeUser) {
+		String activeUserId = activeUser.user.id;
+		if (activeUserId.equals(id)) {
+			updateUsersDataFromStorage(activeUser, activeUserId);
+		}
+	}
+
+	private void updateUsersDataFromStorage(ActiveUser activeUser, String activeUserId) {
+		UserPicker userPicker = UserPickerProvider.getUserPicker();
+		UserInfo userInfo = UserInfo.withIdInUserStorage(activeUserId);
+		User pickedUser = userPicker.pickUser(userInfo);
+		activeUser.user = pickedUser;
 	}
 
 	void onlyForTestEmptyAuthentications() {
