@@ -26,6 +26,7 @@
 	<properties>
 		<logger.version>2.10.0</logger.version>
 		<gatekeeper.version>5.2.0</gatekeeper.version>
+		<messaging.version>3.0.0</messaging.version>
 		<json.version>3.10.0</json.version>
 		<javax.ws.rs.version>2.1.1</javax.ws.rs.version>
 		<jaxb-api.version>2.3.1</jaxb-api.version>
@@ -56,6 +57,12 @@
 			<groupId>se.uu.ub.cora</groupId>
 			<artifactId>gatekeeper</artifactId>
 			<version>${gatekeeper.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>messaging</artifactId>
+			<version>${messaging.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

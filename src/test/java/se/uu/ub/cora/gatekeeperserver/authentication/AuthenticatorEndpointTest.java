@@ -21,7 +21,6 @@ package se.uu.ub.cora.gatekeeperserver.authentication;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -30,18 +29,19 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
+import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorSpy;
 
 public class AuthenticatorEndpointTest {
 	private AuthenticatorEndpoint authenticatorEndpoint;
 	private Response response;
-	private GateKeeperLocatorSpy locator;
+	private GatekeeperLocatorSpy locator;
 	private GatekeeperSpy gatekeeperSpy;
 
 	@BeforeMethod
 	public void setUp() {
 		gatekeeperSpy = new GatekeeperSpy();
-		locator = new GateKeeperLocatorSpy();
-		locator.setGatekeepSpy(gatekeeperSpy);
+		locator = new GatekeeperLocatorSpy();
+		locator.MRV.setDefaultReturnValuesSupplier("locateGatekeeper", () -> gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 
 		authenticatorEndpoint = new AuthenticatorEndpoint();
@@ -51,7 +51,7 @@ public class AuthenticatorEndpointTest {
 	public void testDependenciesAreCalled() {
 		String token = "someToken";
 		response = authenticatorEndpoint.getUserForToken(token);
-		assertTrue(locator.gatekeeperLocated);
+		locator.MCR.assertMethodWasCalled("locateGatekeeper");
 		gatekeeperSpy.MCR.assertMethodWasCalled("getUserForToken");
 	}
 
