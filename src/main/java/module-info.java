@@ -7,6 +7,7 @@ module se.uu.ub.cora.gatekeeperserver {
 	requires se.uu.ub.cora.logger;
 	requires se.uu.ub.cora.initialize;
 	requires se.uu.ub.cora.messaging;
+	requires se.uu.ub.cora.storage;
 
 	uses se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
 	uses se.uu.ub.cora.gatekeeper.storage.UserStorageProvider;

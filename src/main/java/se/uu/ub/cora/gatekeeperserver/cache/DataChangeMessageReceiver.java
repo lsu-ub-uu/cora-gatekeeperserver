@@ -22,6 +22,7 @@ import java.util.Map;
 
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.messaging.MessageReceiver;
+import se.uu.ub.cora.storage.RecordStorageProvider;
 
 public class DataChangeMessageReceiver implements MessageReceiver {
 
@@ -34,13 +35,15 @@ public class DataChangeMessageReceiver implements MessageReceiver {
 	}
 
 	private void handleDataChangedForGatekeeper(String type, String id, String action) {
-		// TODO: call RecordStorage.dataChanged(type, id, action);)
+		RecordStorageProvider.dataChanged(type, id, action);
+
 		GatekeeperInstanceProvider.dataChanged(type, id, action);
 	}
 
 	@Override
 	public void topicClosed() {
 		// TODO: please implement.
+		System.exit(-1);
 	}
 
 }

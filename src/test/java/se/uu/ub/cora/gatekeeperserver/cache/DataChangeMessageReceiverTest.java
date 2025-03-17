@@ -19,31 +19,51 @@
 package se.uu.ub.cora.gatekeeperserver.cache;
 
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorSpy;
+import se.uu.ub.cora.logger.LoggerFactory;
+import se.uu.ub.cora.logger.LoggerProvider;
+import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
 import se.uu.ub.cora.messaging.MessageReceiver;
+import se.uu.ub.cora.storage.RecordStorageProvider;
+import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
 
 public class DataChangeMessageReceiverTest {
 
 	private static final String EMPTY_MESSAGE = "";
 	private DataChangeMessageReceiver receiver;
 	private GatekeeperLocatorSpy locator;
+	private RecordStorageInstanceProviderSpy recordStorageProvider;
 
 	@BeforeMethod
 	private void beforeMethod() {
+		setUpRecordStorageProvider();
 		locator = new GatekeeperLocatorSpy();
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 
 		receiver = new DataChangeMessageReceiver();
+	}
+
+	@AfterMethod
+	private void afterMethod() {
+		LoggerProvider.setLoggerFactory(null);
+		RecordStorageProvider.onlyForTestSetRecordStorageInstanceProvider(null);
+	}
+
+	private void setUpRecordStorageProvider() {
+		LoggerFactory logger = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(logger);
+		recordStorageProvider = new RecordStorageInstanceProviderSpy();
+		RecordStorageProvider.onlyForTestSetRecordStorageInstanceProvider(recordStorageProvider);
 	}
 
 	@Test
@@ -66,12 +86,17 @@ public class DataChangeMessageReceiverTest {
 
 		receiver.receiveMessage(headers, EMPTY_MESSAGE);
 
-		fail();
-		// TODO: call RecordStorage.dataChanged(type, id, action);)
+		recordStorageProvider.MCR.assertParameters("dataChanged", 0, "user", "someId",
+				"someAction");
 		var gatekeeper = (GatekeeperSpy) locator.MCR
 				.assertCalledParametersReturn("locateGatekeeper");
 		gatekeeper.MCR.assertParameters("dataChanged", 0, "user", "someId", "someAction");
 
+	}
+
+	@Test
+	public void testTopicClosed() {
+		receiver.topicClosed();
 	}
 
 	private Map<String, String> createHeadersForType(String type) {
@@ -81,4 +106,5 @@ public class DataChangeMessageReceiverTest {
 		headers.put("action", "someAction");
 		return headers;
 	}
+
 }
