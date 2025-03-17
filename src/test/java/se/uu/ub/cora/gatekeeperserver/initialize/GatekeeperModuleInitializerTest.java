@@ -22,12 +22,8 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import jakarta.servlet.ServletContext;
@@ -50,17 +46,7 @@ public class GatekeeperModuleInitializerTest {
 	private GatekeeperModuleInitializer gatekeeperInitializer;
 	private UserPickerInstanceProviderSpy userPickerInstanceProviderSpy;
 
-	private Map<String, String> settings;
 	private MessagingFactorySpy messagingFactory;
-
-	@BeforeTest
-	private void beforeTest() {
-		settings = new HashMap<>();
-		settings.put("hostname", "someHostname");
-		settings.put("port", "6666");
-		settings.put("virtualHost", "someVirtualHost");
-		settings.put("exchange", "someExchange");
-	}
 
 	@BeforeMethod
 	public void beforeMethod() {
@@ -74,7 +60,6 @@ public class GatekeeperModuleInitializerTest {
 		source = new ServletContextSpy();
 		context = new ServletContextEvent(source);
 		setNeededInitParameters();
-		// SettingsProvider.setSettings(settings);
 		gatekeeperInitializer = new GatekeeperModuleInitializer();
 	}
 
@@ -88,10 +73,10 @@ public class GatekeeperModuleInitializerTest {
 	private void setNeededInitParameters() {
 		source.setInitParameter("initParam1", "initValue1");
 		source.setInitParameter("initParam2", "initValue2");
-		source.setInitParameter("hostname", "someHostname");
-		source.setInitParameter("port", "6666");
-		source.setInitParameter("virtualHost", "someVirtualHost");
-		source.setInitParameter("exchange", "someExchange");
+		source.setInitParameter("rabbitMqHostname", "someHostname");
+		source.setInitParameter("rabbitMqPort", "6666");
+		source.setInitParameter("rabbitMqVirtualHost", "someVirtualHost");
+		source.setInitParameter("rabbitMqExchange", "someExchange");
 	}
 
 	@Test
@@ -136,10 +121,10 @@ public class GatekeeperModuleInitializerTest {
 		var routingInfo = (AmqpMessageListenerRoutingInfo) messagingFactory.MCR
 				.getParameterForMethodAndCallNumberAndParameter("factorTopicMessageListener", 0,
 						"messagingRoutingInfo");
-		assertEquals(routingInfo.hostname, settings.get("hostname"));
-		assertEquals(routingInfo.port, Integer.parseInt(settings.get("port")));
-		assertEquals(routingInfo.virtualHost, settings.get("virtualHost"));
-		assertEquals(routingInfo.exchange, settings.get("exchange"));
+		assertEquals(routingInfo.hostname, "someHostname");
+		assertEquals(routingInfo.port, 6666);
+		assertEquals(routingInfo.virtualHost, "someVirtualHost");
+		assertEquals(routingInfo.exchange, "someExchange");
 		assertEquals(routingInfo.routingKey, "user");
 	}
 
