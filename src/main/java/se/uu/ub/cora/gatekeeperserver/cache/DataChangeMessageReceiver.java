@@ -21,10 +21,13 @@ package se.uu.ub.cora.gatekeeperserver.cache;
 import java.util.Map;
 
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
+import se.uu.ub.cora.logger.Logger;
+import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.messaging.MessageReceiver;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 
 public class DataChangeMessageReceiver implements MessageReceiver {
+	private Logger log = LoggerProvider.getLoggerForClass(DataChangeMessageReceiver.class);
 
 	@Override
 	public void receiveMessage(Map<String, String> headers, String message) {
@@ -42,8 +45,9 @@ public class DataChangeMessageReceiver implements MessageReceiver {
 
 	@Override
 	public void topicClosed() {
-		// TODO: please implement.
+		log.logFatalUsingMessage(
+				"Shuting down Gatekeeper due to lost connection with message broker,"
+						+ "continued operation would lead to system inconsistencies.");
 		System.exit(-1);
 	}
-
 }

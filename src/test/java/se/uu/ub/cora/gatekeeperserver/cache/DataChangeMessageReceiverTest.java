@@ -30,9 +30,9 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorSpy;
-import se.uu.ub.cora.logger.LoggerFactory;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
+import se.uu.ub.cora.logger.spies.LoggerSpy;
 import se.uu.ub.cora.messaging.MessageReceiver;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
@@ -43,6 +43,7 @@ public class DataChangeMessageReceiverTest {
 	private DataChangeMessageReceiver receiver;
 	private GatekeeperLocatorSpy locator;
 	private RecordStorageInstanceProviderSpy recordStorageProvider;
+	private LoggerFactorySpy loggerFactory;
 
 	@BeforeMethod
 	private void beforeMethod() {
@@ -60,8 +61,8 @@ public class DataChangeMessageReceiverTest {
 	}
 
 	private void setUpRecordStorageProvider() {
-		LoggerFactory logger = new LoggerFactorySpy();
-		LoggerProvider.setLoggerFactory(logger);
+		loggerFactory = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(loggerFactory);
 		recordStorageProvider = new RecordStorageInstanceProviderSpy();
 		RecordStorageProvider.onlyForTestSetRecordStorageInstanceProvider(recordStorageProvider);
 	}
@@ -94,9 +95,19 @@ public class DataChangeMessageReceiverTest {
 
 	}
 
-	@Test
+	@Test(enabled = false)
 	public void testTopicClosed() {
+		// can not be tested as security manager is removed from java
 		receiver.topicClosed();
+
+		LoggerSpy logger = getLogger();
+		logger.MCR.assertParameters("logFatalUsingMessage", 0,
+				"Shuting down Gatekeeper due to lost connection with message broker,"
+						+ "continued operation would lead to system inconsistencies.");
+	}
+
+	private LoggerSpy getLogger() {
+		return (LoggerSpy) loggerFactory.MCR.getReturnValue("factorForClass", 0);
 	}
 
 	private Map<String, String> createHeadersForType(String type) {
