@@ -76,7 +76,7 @@ public class GatekeeperModuleInitializerTest {
 		source.setInitParameter("rabbitMqHostname", "someHostname");
 		source.setInitParameter("rabbitMqPort", "6666");
 		source.setInitParameter("rabbitMqVirtualHost", "someVirtualHost");
-		source.setInitParameter("rabbitMqExchange", "someExchange");
+		source.setInitParameter("rabbitMqDataExchange", "someExchange");
 	}
 
 	@Test

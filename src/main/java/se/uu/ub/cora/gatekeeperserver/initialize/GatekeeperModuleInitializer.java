@@ -89,7 +89,7 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 		String hostname = SettingsProvider.getSetting("rabbitMqHostname");
 		int port = Integer.parseInt(SettingsProvider.getSetting("rabbitMqPort"));
 		String virtualHost = SettingsProvider.getSetting("rabbitMqVirtualHost");
-		String exchange = SettingsProvider.getSetting("rabbitMqExchange");
+		String exchange = SettingsProvider.getSetting("rabbitMqDataExchange");
 		String routingKey = "user";
 
 		return new AmqpMessageListenerRoutingInfo(hostname, port, virtualHost, exchange,
