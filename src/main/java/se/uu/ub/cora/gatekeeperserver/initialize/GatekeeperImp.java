@@ -253,12 +253,20 @@ public enum GatekeeperImp implements Gatekeeper {
 		// TODO: Vi behöver hantera fallet om loginId ändras i användare. Då behöver man byta
 		// loginId i alla activeTokens och i key för activeUsers (eller kan vi lösa problemet på ett
 		// annat sett)
+		System.err.println("GatekeeperImp 1");
+
 		if ("user".equals(type) && "update".equals(action)) {
+			System.err.println("GatekeeperImp 2");
 			updateRelatedUsersDataFromStorage(id);
+			System.err.println("GatekeeperImp 3");
 		}
+		System.err.println("GatekeeperImp ");
 		if ("user".equals(type) && "delete".equals(action)) {
+			System.err.println("GatekeeperImp 4");
 			deleteRelatedUsersFromCache(id);
+			System.err.println("GatekeeperImp 5");
 		}
+		System.err.println("GatekeeperImp 6");
 	}
 
 	private void deleteRelatedUsersFromCache(String id) {
@@ -270,19 +278,44 @@ public enum GatekeeperImp implements Gatekeeper {
 	private void possiblyDeleteUserFromCache(String id, ActiveUser activeUser) {
 		String activeUserId = activeUser.user.id;
 		if (activeUserId.equals(id)) {
+			System.err.println("GatekeeperImp 12");
 			deleteUserFromCache(activeUser);
+			System.err.println("GatekeeperImp 13");
 		}
 	}
 
 	private void deleteUserFromCache(ActiveUser activeUser) {
 		String activeUserLoginId = activeUser.user.loginId;
-		activeTokens.values().removeIf(
-				activeToken -> activeToken.loginId().equals(activeUserLoginId));
+		System.err.println("GatekeeperImp 14");
+		activeTokens.values()
+				.removeIf(activeToken -> activeToken.loginId().equals(activeUserLoginId));
+		System.err.println("GatekeeperImp 15");
 		activeUsers.remove(activeUserLoginId);
+		System.err.println("GatekeeperImp 16");
 	}
 
 	private void updateRelatedUsersDataFromStorage(String id) {
+		System.out.println("");
+		System.out.println("activetokens size: " + activeTokens.size());
+		for (Entry<String, ActiveTokenForUser> entry : activeTokens.entrySet()) {
+			System.out.println("activeTokens key: " + entry.getKey());
+			var value = entry.getValue();
+			System.out.println("activeTokens tokenId: " + value.tokenId());
+			System.out.println("activeTokens loginId: " + value.loginId());
+		}
+
+		System.out.println("");
+		System.out.println("activeUsers size: " + activeUsers.size());
+		for (String key : activeUsers.keySet()) {
+			System.out.println("activeUser key: " + key);
+		}
+
+		System.out.println("");
+		System.out.println("userId: " + id);
 		for (ActiveUser activeUser : activeUsers.values()) {
+			System.out.println("activeUser: " + activeUser.user.id);
+			System.out.println("activeUser: " + activeUser.user.loginId);
+			System.out.println("activeUser: " + activeUser.counter);
 			possiblyUpdateUsersDataFromStorage(id, activeUser);
 		}
 	}
@@ -290,15 +323,24 @@ public enum GatekeeperImp implements Gatekeeper {
 	private void possiblyUpdateUsersDataFromStorage(String id, ActiveUser activeUser) {
 		String activeUserId = activeUser.user.id;
 		if (activeUserId.equals(id)) {
+			System.out.println("Update user from storage: " + id);
 			updateUsersDataFromStorage(activeUser, activeUserId);
 		}
 	}
 
 	private void updateUsersDataFromStorage(ActiveUser activeUser, String activeUserId) {
+
+		System.err.println("GatekeeperImp 7");
 		UserPicker userPicker = UserPickerProvider.getUserPicker();
+		System.err.println("GatekeeperImp 8");
+		System.out.println("THIS IS STRANGE START picked userId should be same as activeUserId!!! ");
 		UserInfo userInfo = UserInfo.withIdInUserStorage(activeUserId);
+		System.err.println("GatekeeperImp 9 " + activeUserId);
 		User pickedUser = userPicker.pickUser(userInfo);
+		System.err.println("GatekeeperImp10 " + pickedUser.id);
+		System.out.println("THIS IS STRANGE END !!! ");
 		activeUser.user = pickedUser;
+		System.err.println("GatekeeperImp 11");
 	}
 
 	void onlyForTestEmptyAuthentications() {
