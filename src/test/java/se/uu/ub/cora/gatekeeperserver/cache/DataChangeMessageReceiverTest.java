@@ -36,10 +36,13 @@ import se.uu.ub.cora.logger.spies.LoggerSpy;
 import se.uu.ub.cora.messaging.MessageReceiver;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 import se.uu.ub.cora.storage.spies.RecordStorageInstanceProviderSpy;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
 public class DataChangeMessageReceiverTest {
 
 	private static final String EMPTY_MESSAGE = "";
+	private static final String SOME_OTHER_MESSAGING_ID = "someOtherMessagingId";
 	private DataChangeMessageReceiver receiver;
 	private GatekeeperLocatorSpy locator;
 	private RecordStorageInstanceProviderSpy recordStorageProvider;
@@ -56,7 +59,6 @@ public class DataChangeMessageReceiverTest {
 
 	@AfterMethod
 	private void afterMethod() {
-		LoggerProvider.setLoggerFactory(null);
 		RecordStorageProvider.onlyForTestSetRecordStorageInstanceProvider(null);
 	}
 
@@ -95,26 +97,89 @@ public class DataChangeMessageReceiverTest {
 
 	}
 
-	@Test(enabled = false)
-	public void testTopicClosed() {
-		// can not be tested as security manager is removed from java
-		receiver.topicClosed();
+	// @Test(enabled = false)
+	// public void testTopicClosed() {
+	// // can not be tested as security manager is removed from java
+	// receiver.topicClosed();
+	//
+	// LoggerSpy logger = getLogger();
+	// logger.MCR.assertParameters("logFatalUsingMessage", 0,
+	// "Shuting down Gatekeeper due to lost connection with message broker,"
+	// + "continued operation would lead to system inconsistencies.");
+	// }
 
-		LoggerSpy logger = getLogger();
-		logger.MCR.assertParameters("logFatalUsingMessage", 0,
-				"Shuting down Gatekeeper due to lost connection with message broker,"
-						+ "continued operation would lead to system inconsistencies.");
-	}
-
-	private LoggerSpy getLogger() {
-		return (LoggerSpy) loggerFactory.MCR.getReturnValue("factorForClass", 0);
-	}
+	// private LoggerSpy getLogger() {
+	// return (LoggerSpy) loggerFactory.MCR.getReturnValue("factorForClass", 0);
+	// }
 
 	private Map<String, String> createHeadersForType(String type) {
 		Map<String, String> headers = new HashMap<>();
 		headers.put("type", type);
 		headers.put("id", "someId");
 		headers.put("action", "someAction");
+		return headers;
+	}
+
+	@Test
+	public void testTopicClosed() {
+		DataChangeMessageRecieverForTest receiverForTest = new DataChangeMessageRecieverForTest();
+		// can not be tested as security manager is removed from java
+		receiverForTest.topicClosed();
+
+		LoggerSpy logger = (LoggerSpy) loggerFactory.MCR.assertCalledParametersReturn(
+				"factorForClass", DataChangeMessageRecieverForTest.class);
+		logger.MCR.assertParameters("logFatalUsingMessage", 0,
+				"Shuting down due to lost connection with message broker,"
+						+ "continued operation would lead to system inconsistencies.");
+		receiverForTest.MCR.assertMethodWasCalled("shutdownSystemToPreventDataInconsistency");
+	}
+
+	@Test
+	public void testReceiveMessage_errorUpdateingCache() {
+		DataChangeMessageRecieverForTest receiverForTest = new DataChangeMessageRecieverForTest();
+		RuntimeException returnException = new RuntimeException("someException");
+		recordStorageProvider.MRV.setAlwaysThrowException("dataChanged", returnException);
+
+		Map<String, String> headers = createHeadersForType("user", "someAction",
+				SOME_OTHER_MESSAGING_ID);
+
+		receiverForTest.receiveMessage(headers, EMPTY_MESSAGE);
+
+		LoggerSpy logger = (LoggerSpy) loggerFactory.MCR.assertCalledParametersReturn(
+				"factorForClass", DataChangeMessageRecieverForTest.class);
+		logger.MCR.assertParameters("logFatalUsingMessageAndException", 0,
+				"Shuting down due to error keeping data in sync,"
+						+ "continued operation would lead to system inconsistencies.",
+				returnException);
+		receiverForTest.MCR.assertMethodWasCalled("shutdownSystemToPreventDataInconsistency");
+	}
+
+	class DataChangeMessageRecieverForTest extends DataChangeMessageReceiver {
+		public MethodCallRecorder MCR = new MethodCallRecorder();
+		public MethodReturnValues MRV = new MethodReturnValues();
+
+		public DataChangeMessageRecieverForTest() {
+			log = LoggerProvider.getLoggerForClass(DataChangeMessageRecieverForTest.class);
+			MCR.useMRV(MRV);
+		}
+
+		@Override
+		void shutdownSystemToPreventDataInconsistency() {
+			MCR.addCall();
+		}
+	}
+
+	private LoggerSpy getLogger() {
+		return (LoggerSpy) loggerFactory.MCR.getReturnValue("factorForClass", 0);
+	}
+
+	private Map<String, String> createHeadersForType(String type, String action,
+			String messagingId) {
+		Map<String, String> headers = new HashMap<>();
+		headers.put("type", type);
+		headers.put("id", "someId");
+		headers.put("action", action);
+		headers.put("messagingId", messagingId);
 		return headers;
 	}
 

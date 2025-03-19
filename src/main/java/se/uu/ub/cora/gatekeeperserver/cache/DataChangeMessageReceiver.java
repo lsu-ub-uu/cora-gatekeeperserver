@@ -27,10 +27,20 @@ import se.uu.ub.cora.messaging.MessageReceiver;
 import se.uu.ub.cora.storage.RecordStorageProvider;
 
 public class DataChangeMessageReceiver implements MessageReceiver {
-	private Logger log = LoggerProvider.getLoggerForClass(DataChangeMessageReceiver.class);
+	protected Logger log = LoggerProvider.getLoggerForClass(DataChangeMessageReceiver.class);
 
 	@Override
 	public void receiveMessage(Map<String, String> headers, String message) {
+		try {
+			handleUserChanges(headers);
+		} catch (Exception e) {
+			log.logFatalUsingMessageAndException("Shuting down due to error keeping data in sync,"
+					+ "continued operation would lead to system inconsistencies.", e);
+			shutdownSystemToPreventDataInconsistency();
+		}
+	}
+
+	private void handleUserChanges(Map<String, String> headers) {
 		String type = headers.get("type");
 		if ("user".equals(type)) {
 			handleDataChangedForGatekeeper(type, headers.get("id"), headers.get("action"));
@@ -39,15 +49,17 @@ public class DataChangeMessageReceiver implements MessageReceiver {
 
 	private void handleDataChangedForGatekeeper(String type, String id, String action) {
 		RecordStorageProvider.dataChanged(type, id, action);
-
 		GatekeeperInstanceProvider.dataChanged(type, id, action);
 	}
 
 	@Override
 	public void topicClosed() {
-		log.logFatalUsingMessage(
-				"Shuting down Gatekeeper due to lost connection with message broker,"
-						+ "continued operation would lead to system inconsistencies.");
+		log.logFatalUsingMessage("Shuting down due to lost connection with message broker,"
+				+ "continued operation would lead to system inconsistencies.");
+		shutdownSystemToPreventDataInconsistency();
+	}
+
+	void shutdownSystemToPreventDataInconsistency() {
 		System.exit(-1);
 	}
 }
