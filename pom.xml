@@ -18,7 +18,7 @@
 	</parent>
 
 	<artifactId>gatekeeperserver</artifactId>
-	<version>6.5.0-SNAPSHOT</version>
+	<version>6.5.0</version>
 	<packaging>jar</packaging>
 
 	<name>gatekeeperserver</name>
@@ -45,7 +45,7 @@
 		<connection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</connection>
 		<developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</developerConnection>
 		<url>https://github.com/lsu-ub-uu/cora-gatekeeperserver.git</url>
-		<tag>release/6.5</tag>
+		<tag>gatekeeperserver-6.5.0</tag>
 	</scm>
 
 
