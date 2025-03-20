@@ -20,6 +20,7 @@ package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import se.uu.ub.cora.gatekeeper.picker.UserPicker;
 import se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
+import se.uu.ub.cora.gatekeeperserver.spies.UserPickerSpy;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 

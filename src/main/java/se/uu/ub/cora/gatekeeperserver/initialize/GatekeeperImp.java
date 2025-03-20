@@ -20,6 +20,7 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -253,101 +254,71 @@ public enum GatekeeperImp implements Gatekeeper {
 		// TODO: Vi behöver hantera fallet om loginId ändras i användare. Då behöver man byta
 		// loginId i alla activeTokens och i key för activeUsers (eller kan vi lösa problemet på ett
 		// annat sett)
-		System.err.println("GatekeeperImp 1");
-
 		if ("user".equals(type) && "update".equals(action)) {
-			System.err.println("GatekeeperImp 2");
 			updateRelatedUsersDataFromStorage(id);
-			System.err.println("GatekeeperImp 3");
 		}
-		System.err.println("GatekeeperImp ");
 
 		if ("user".equals(type) && "delete".equals(action)) {
-			System.err.println("GatekeeperImp 4");
 			deleteRelatedUsersFromCache(id);
-			System.err.println("GatekeeperImp 5");
 		}
-		System.err.println("GatekeeperImp 6");
 	}
 
 	private void deleteRelatedUsersFromCache(String id) {
-		for (ActiveUser activeUser : activeUsers.values()) {
-			possiblyDeleteUserFromCache(id, activeUser);
+		Iterator<ActiveUser> iterator = activeUsers.values().iterator();
+		while (iterator.hasNext()) {
+			possiblyDeleteUserFromCache(id, iterator.next(), iterator);
 		}
 	}
 
-	private void possiblyDeleteUserFromCache(String id, ActiveUser activeUser) {
+	private void possiblyDeleteUserFromCache(String id, ActiveUser activeUser,
+			Iterator<ActiveUser> iterator) {
 		String activeUserId = activeUser.user.id;
 		if (activeUserId.equals(id)) {
-			System.err.println("GatekeeperImp 12");
-			deleteUserFromCache(activeUser);
-			System.err.println("GatekeeperImp 13");
+			deleteUserFromCache(activeUser, iterator);
 		}
 	}
 
-	private void deleteUserFromCache(ActiveUser activeUser) {
+	private void deleteUserFromCache(ActiveUser activeUser, Iterator<ActiveUser> iterator) {
 		String activeUserLoginId = activeUser.user.loginId;
-		System.err.println("GatekeeperImp 14");
 		activeTokens.values()
 				.removeIf(activeToken -> activeToken.loginId().equals(activeUserLoginId));
-		System.err.println("GatekeeperImp 15");
-		activeUsers.remove(activeUserLoginId);
-		System.err.println("GatekeeperImp 16");
+		iterator.remove();
 	}
 
 	private void updateRelatedUsersDataFromStorage(String id) {
-		System.out.println("");
-		System.out.println("activetokens size: " + activeTokens.size());
-		for (Entry<String, ActiveTokenForUser> entry : activeTokens.entrySet()) {
-			System.out.println("activeTokens key: " + entry.getKey());
-			var value = entry.getValue();
-			System.out.println("activeTokens tokenId: " + value.tokenId());
-			System.out.println("activeTokens loginId: " + value.loginId());
+		Optional<ActiveUser> foundActiveUser = findActiveUserWithId(id);
+		if (foundActiveUser.isPresent()) {
+			handleUpdateForActiveUser(id, foundActiveUser.get());
 		}
+	}
 
-		System.out.println("");
-		System.out.println("activeUsers size: " + activeUsers.size());
-		for (String key : activeUsers.keySet()) {
-			System.out.println("activeUser key: " + key);
-		}
-
-		System.out.println("");
-		System.out.println("userId: " + id);
+	private Optional<ActiveUser> findActiveUserWithId(String id) {
 		for (ActiveUser activeUser : activeUsers.values()) {
-			System.out.println("activeUser: " + activeUser.user.id);
-			System.out.println("activeUser: " + activeUser.user.loginId);
-			System.out.println("activeUser: " + activeUser.counter);
-			possiblyUpdateUsersDataFromStorage(id, activeUser);
+			String activeUserId1 = activeUser.user.id;
+			if (activeUserId1.equals(id)) {
+				return Optional.of(activeUser);
+			}
+		}
+		return Optional.empty();
+	}
+
+	private void handleUpdateForActiveUser(String id, ActiveUser activeUser) {
+		User pickedUser = pickUserUsingId(id);
+		if (activeUserIdDifferentThanUserPickedFromStorage(id, pickedUser.id)) {
+			deleteRelatedUsersFromCache(id);
+		} else {
+			activeUser.user = pickedUser;
 		}
 	}
 
-	private void possiblyUpdateUsersDataFromStorage(String id, ActiveUser activeUser) {
-		String activeUserId = activeUser.user.id;
-		if (activeUserId.equals(id)) {
-			System.out.println("Update user from storage: " + id);
-			updateUsersDataFromStorage(activeUser, activeUserId);
-		}
+	private boolean activeUserIdDifferentThanUserPickedFromStorage(String id, String idFromPickedUser) {
+		return !id.equals(idFromPickedUser);
 	}
 
-	private void updateUsersDataFromStorage(ActiveUser activeUser, String activeUserId) {
-
-		System.err.println("GatekeeperImp 7");
+	private User pickUserUsingId(String id) {
 		UserPicker userPicker = UserPickerProvider.getUserPicker();
-		System.err.println("GatekeeperImp 8");
-		System.out
-				.println("THIS IS STRANGE START picked userId should be same as activeUserId!!! ");
-		UserInfo userInfo = UserInfo.withIdInUserStorage(activeUserId);
-		System.err.println("GatekeeperImp 9 " + activeUserId);
-		User pickedUser = userPicker.pickUser(userInfo);
-		System.err.println("GatekeeperImp10 " + pickedUser.id);
-		System.out.println("THIS IS STRANGE END !!! ");
-
-		if (!activeUserId.equals(pickedUser.id)) {
-			// TODO: problem heree!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			deleteRelatedUsersFromCache(activeUserId);
-		}
-		activeUser.user = pickedUser;
-		System.err.println("GatekeeperImp 11");
+		UserInfo userInfo = UserInfo.withIdInUserStorage(id);
+		return userPicker.pickUser(userInfo);
 	}
 
 	void onlyForTestEmptyAuthentications() {

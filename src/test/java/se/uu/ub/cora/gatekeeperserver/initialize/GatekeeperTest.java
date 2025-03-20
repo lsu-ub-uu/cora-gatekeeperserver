@@ -40,6 +40,7 @@ import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
 import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
 import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperImp.ActiveUser;
+import se.uu.ub.cora.gatekeeperserver.spies.UserPickerSpy;
 import se.uu.ub.cora.gatekeeperserver.tokenprovider.AuthToken;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
@@ -58,18 +59,37 @@ public class GatekeeperTest {
 	private UserInfo userInfo;
 	private User userElly;
 	private User userRudolf;
+	private User userRudolfUpdated;
+	private UserPickerSpy userPickerSpy;
 
 	@BeforeMethod
 	public void beforeMethod() {
-		loggerFactory = new LoggerFactorySpy();
-		LoggerProvider.setLoggerFactory(loggerFactory);
-		userPickerInstanceProvider = new UserPickerInstanceProviderSpy();
-		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProvider);
-		userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
+		setUpProviders();
+
 		userElly = createUserForElly();
 		userRudolf = createUserForRudolf();
+		userRudolfUpdated = createUserForRudolf();
 
+		userInfo = UserInfo.withLoginIdAndLoginDomain("someLoginId", "someLoginDomain");
 		gatekeeper = GatekeeperImp.INSTANCE;
+	}
+
+	private void setUpProviders() {
+		setUpLoggerProvider();
+		setUpUserPickerProvider();
+	}
+
+	private void setUpLoggerProvider() {
+		loggerFactory = new LoggerFactorySpy();
+		LoggerProvider.setLoggerFactory(loggerFactory);
+	}
+
+	private void setUpUserPickerProvider() {
+		userPickerInstanceProvider = new UserPickerInstanceProviderSpy();
+		userPickerSpy = new UserPickerSpy();
+		userPickerInstanceProvider.MRV.setDefaultReturnValuesSupplier("getUserPicker",
+				() -> userPickerSpy);
+		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProvider);
 	}
 
 	@AfterMethod
@@ -417,9 +437,7 @@ public class GatekeeperTest {
 
 	@Test
 	public void testDataChanged_update_found() {
-		UserPickerSpy userPickerSpy = getUserPickerSpy();
-		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", null);
-
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", () -> userElly);
 		setupAnActiveUser(TOKEN, userElly);
 
 		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "update");
@@ -440,6 +458,7 @@ public class GatekeeperTest {
 
 	@Test
 	public void testDataChanged_update_found_userReturnedFromUserPickerNotSameAsActive() {
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", () -> userRudolf);
 		setupAnActiveUser(TOKEN, userElly);
 
 		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "update");
@@ -458,6 +477,7 @@ public class GatekeeperTest {
 
 	@Test
 	public void testDataChanged_delete_notFound() {
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", () -> userElly);
 		setupAnActiveUser(TOKEN, userElly);
 
 		gatekeeper.dataChanged(USER_RECORD_TYPE, "someUserId", "delete");
@@ -481,6 +501,8 @@ public class GatekeeperTest {
 
 	@Test
 	public void testMultipleLogInAndDataChanges() {
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", () -> userRudolfUpdated);
+
 		setupAnActiveUser("tokenElly_1", userElly);
 		setupAnActiveUser("tokenElly_2", userElly);
 
@@ -498,8 +520,8 @@ public class GatekeeperTest {
 
 		assertNotSame(gatekeeper.getUserForToken("tokenRudolf_1"), userRudolf);
 		assertNotSame(gatekeeper.getUserForToken("tokenRudolf_2"), userRudolf);
-		assertEquals(gatekeeper.getUserForToken("tokenRudolf_1").id, "someSomeUserUserId");
-		assertEquals(gatekeeper.getUserForToken("tokenRudolf_2").id, "someSomeUserUserId");
+		assertEquals(gatekeeper.getUserForToken("tokenRudolf_1").id, "someRudolfUserId");
+		assertEquals(gatekeeper.getUserForToken("tokenRudolf_2").id, "someRudolfUserId");
 		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 4);
 		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 2);
 
