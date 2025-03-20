@@ -417,6 +417,29 @@ public class GatekeeperTest {
 
 	@Test
 	public void testDataChanged_update_found() {
+		UserPickerSpy userPickerSpy = getUserPickerSpy();
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", null);
+
+		setupAnActiveUser(TOKEN, userElly);
+
+		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "update");
+
+		userPickerInstanceProvider.MCR.assertMethodWasCalled("getUserPicker");
+		userPickerSpy.MCR.assertMethodWasCalled("pickUser");
+
+		var userInfoToGetUpdatedUser = (UserInfo) userPickerSpy.MCR
+				.getParameterForMethodAndCallNumberAndParameter("pickUser", 0, "userInfo");
+		assertEquals(userInfoToGetUpdatedUser.idInUserStorage, userElly.id);
+
+		var updatedUserFromStorage = userPickerSpy.MCR.getReturnValue("pickUser", 0);
+
+		Map<String, ActiveUser> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
+		User userInCache = activeUsers.get(userElly.loginId).user;
+		assertSame(userInCache, updatedUserFromStorage);
+	}
+
+	@Test
+	public void testDataChanged_update_found_userReturnedFromUserPickerNotSameAsActive() {
 		setupAnActiveUser(TOKEN, userElly);
 
 		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "update");
@@ -429,12 +452,8 @@ public class GatekeeperTest {
 				.getParameterForMethodAndCallNumberAndParameter("pickUser", 0, "userInfo");
 		assertEquals(userInfoToGetUpdatedUser.idInUserStorage, userElly.id);
 
-		var updatedUserFromStorage = userPickerSpy.MCR.getReturnValue("pickUser", 0);
-
-		Map<String, ActiveUser> activeUsers = gatekeeper.onlyForTestGetActiveUsers();
-		User userInCache = activeUsers.get(userElly.loginId).user;
-		assertSame(userInCache, updatedUserFromStorage);
-
+		assertTrue(gatekeeper.onlyForTestGetActiveTokens().isEmpty());
+		assertTrue(gatekeeper.onlyForTestGetActiveUsers().isEmpty());
 	}
 
 	@Test

@@ -261,6 +261,7 @@ public enum GatekeeperImp implements Gatekeeper {
 			System.err.println("GatekeeperImp 3");
 		}
 		System.err.println("GatekeeperImp ");
+
 		if ("user".equals(type) && "delete".equals(action)) {
 			System.err.println("GatekeeperImp 4");
 			deleteRelatedUsersFromCache(id);
@@ -333,12 +334,18 @@ public enum GatekeeperImp implements Gatekeeper {
 		System.err.println("GatekeeperImp 7");
 		UserPicker userPicker = UserPickerProvider.getUserPicker();
 		System.err.println("GatekeeperImp 8");
-		System.out.println("THIS IS STRANGE START picked userId should be same as activeUserId!!! ");
+		System.out
+				.println("THIS IS STRANGE START picked userId should be same as activeUserId!!! ");
 		UserInfo userInfo = UserInfo.withIdInUserStorage(activeUserId);
 		System.err.println("GatekeeperImp 9 " + activeUserId);
 		User pickedUser = userPicker.pickUser(userInfo);
 		System.err.println("GatekeeperImp10 " + pickedUser.id);
 		System.out.println("THIS IS STRANGE END !!! ");
+
+		if (!activeUserId.equals(pickedUser.id)) {
+			// TODO: problem heree!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			deleteRelatedUsersFromCache(activeUserId);
+		}
 		activeUser.user = pickedUser;
 		System.err.println("GatekeeperImp 11");
 	}
