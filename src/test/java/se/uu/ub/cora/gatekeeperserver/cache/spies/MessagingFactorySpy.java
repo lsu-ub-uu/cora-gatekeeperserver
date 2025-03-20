@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,31 +16,35 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.gatekeeperserver.initialize;
+package se.uu.ub.cora.gatekeeperserver.cache.spies;
 
-import se.uu.ub.cora.gatekeeper.picker.UserPicker;
-import se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
-import se.uu.ub.cora.gatekeeperserver.spies.UserPickerSpy;
+import se.uu.ub.cora.messaging.MessageListener;
+import se.uu.ub.cora.messaging.MessageRoutingInfo;
+import se.uu.ub.cora.messaging.MessageSender;
+import se.uu.ub.cora.messaging.MessagingFactory;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class UserPickerInstanceProviderSpy implements UserPickerInstanceProvider {
+public class MessagingFactorySpy implements MessagingFactory {
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public UserPickerInstanceProviderSpy() {
+	public MessagingFactorySpy() {
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("getUserPicker", UserPickerSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorTopicMessageSender", MessageSenderSpy::new);
+		MRV.setDefaultReturnValuesSupplier("factorTopicMessageListener", MessageListenerSpy::new);
 	}
 
 	@Override
-	public int getOrderToSelectImplementionsBy() {
-		return 0;
+	public MessageSender factorTopicMessageSender(MessageRoutingInfo messagingRoutingInfo) {
+		return (MessageSender) MCR.addCallAndReturnFromMRV("messagingRoutingInfo",
+				messagingRoutingInfo);
 	}
 
 	@Override
-	public UserPicker getUserPicker() {
-		return (UserPicker) MCR.addCallAndReturnFromMRV();
+	public MessageListener factorTopicMessageListener(MessageRoutingInfo messagingRoutingInfo) {
+		return (MessageListener) MCR.addCallAndReturnFromMRV("messagingRoutingInfo",
+				messagingRoutingInfo);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, 2024 Uppsala University Library
+ * Copyright 2016, 2024, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -71,6 +71,11 @@ public class GatekeeperSpy implements Gatekeeper {
 	@Override
 	public void removeAuthToken(String tokenId, String token) {
 		MCR.addCall("tokenId", tokenId, "token", token);
+	}
+
+	@Override
+	public void dataChanged(String type, String id, String action) {
+		MCR.addCall("type", type, "id", id, "action", action);
 	}
 
 }

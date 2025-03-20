@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uppsala University Library
+ * Copyright 2023 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,28 +16,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
+package se.uu.ub.cora.gatekeeperserver.cache.spies;
 
-package se.uu.ub.cora.gatekeeperserver.authentication;
+import se.uu.ub.cora.messaging.MessageListener;
+import se.uu.ub.cora.messaging.MessageReceiver;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
-import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
+public class MessageListenerSpy implements MessageListener {
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
 
-public class GateKeeperLocatorSpy implements GatekeeperLocator {
-
-	public GatekeeperSpy gatekeeperSpy;
-	public boolean gatekeeperLocated = false;
-	private GatekeeperSpy spy;
+	public MessageListenerSpy() {
+		MCR.useMRV(MRV);
+	}
 
 	@Override
-	public Gatekeeper locateGatekeeper() {
-		gatekeeperLocated = true;
-		// gatekeeperSpy = new GatekeeperSpy();
-		return spy;
+	public void listen(MessageReceiver messageReceiver) {
+		MCR.addCall("messageReceiver", messageReceiver);
 	}
-
-	public void setGatekeepSpy(GatekeeperSpy spy) {
-		this.spy = spy;
-
-	}
-
 }

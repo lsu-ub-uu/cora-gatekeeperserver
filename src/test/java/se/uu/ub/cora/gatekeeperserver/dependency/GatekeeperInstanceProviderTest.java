@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Uppsala University Library
+ * Copyright 2015, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -25,9 +25,27 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
+
 public class GatekeeperInstanceProviderTest {
+
+	private GatekeeperLocatorSpy locator;
+
+	@BeforeMethod
+	private void beforeMethod() {
+		locator = new GatekeeperLocatorSpy();
+		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
+	}
+
+	@AfterMethod
+	private void afterMethod() {
+		GatekeeperInstanceProvider.setGatekeeperLocator(null);
+	}
+
 	@Test
 	public void testPrivateConstructor() throws Exception {
 		Constructor<GatekeeperInstanceProvider> constructor = GatekeeperInstanceProvider.class
@@ -46,10 +64,16 @@ public class GatekeeperInstanceProviderTest {
 
 	@Test
 	public void makeSureLocatorIsCalledForGatekeeper() {
-		GatekeeperLocatorSpy locator = new GatekeeperLocatorSpy();
-		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		GatekeeperInstanceProvider.getGatekeeper();
-		assertTrue(locator.locatorWasCalled);
+
+		locator.MCR.assertMethodWasCalled("locateGatekeeper");
 	}
 
+	@Test
+	public void testDataChange() {
+		GatekeeperInstanceProvider.dataChanged("someType", "someId", "someAction");
+
+		var gatekeeper = (GatekeeperSpy) locator.MCR.getReturnValue("locateGatekeeper", 0);
+		gatekeeper.MCR.assertParameters("dataChanged", 0, "someType", "someId", "someAction");
+	}
 }

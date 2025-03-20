@@ -21,7 +21,6 @@ package se.uu.ub.cora.gatekeeperserver.tokenprovider;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -29,15 +28,15 @@ import org.testng.annotations.Test;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import se.uu.ub.cora.gatekeeperserver.authentication.AuthenticationException;
-import se.uu.ub.cora.gatekeeperserver.authentication.GateKeeperLocatorSpy;
 import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
+import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorSpy;
 
 public class TokenProviderEndpointTest {
 	private static final String TOKEN = "someToken";
 	private static final String TOKEN_ID = "someTokenId";
 	private Response response;
-	private GateKeeperLocatorSpy locator;
+	private GatekeeperLocatorSpy locator;
 	private TokenProviderEndpoint tokenProviderEndpoint;
 	private String jsonUserInfo;
 	private GatekeeperSpy gatekeeperSpy;
@@ -45,9 +44,9 @@ public class TokenProviderEndpointTest {
 	@BeforeMethod
 	public void setUp() {
 
-		locator = new GateKeeperLocatorSpy();
+		locator = new GatekeeperLocatorSpy();
 		gatekeeperSpy = new GatekeeperSpy();
-		locator.setGatekeepSpy(gatekeeperSpy);
+		locator.MRV.setDefaultReturnValuesSupplier("locateGatekeeper", () -> gatekeeperSpy);
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
 		tokenProviderEndpoint = new TokenProviderEndpoint();
 		jsonUserInfo = jsonUserInfo();
@@ -65,7 +64,7 @@ public class TokenProviderEndpointTest {
 	@Test
 	public void testDependenciesAreCalled() {
 		response = tokenProviderEndpoint.getAuthTokenForUserInfo(jsonUserInfo);
-		assertTrue(locator.gatekeeperLocated);
+		locator.MCR.assertMethodWasCalled("locateGatekeeper");
 		gatekeeperSpy.MCR.assertMethodWasCalled("getAuthTokenForUserInfo");
 	}
 

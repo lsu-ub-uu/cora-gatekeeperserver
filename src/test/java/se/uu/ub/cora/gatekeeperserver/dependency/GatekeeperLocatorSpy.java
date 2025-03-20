@@ -1,5 +1,6 @@
 /*
  * Copyright 2016 Olov McKie
+ * Copyright 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -19,14 +20,23 @@
 
 package se.uu.ub.cora.gatekeeperserver.dependency;
 
-import se.uu.ub.cora.gatekeeperserver.initialize.GatekeeperImp;
+import se.uu.ub.cora.gatekeeperserver.Gatekeeper;
+import se.uu.ub.cora.gatekeeperserver.authentication.GatekeeperSpy;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
 public class GatekeeperLocatorSpy implements GatekeeperLocator {
-	public boolean locatorWasCalled = false;
+
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public MethodReturnValues MRV = new MethodReturnValues();
+
+	public GatekeeperLocatorSpy() {
+		MCR.useMRV(MRV);
+		MRV.setDefaultReturnValuesSupplier("locateGatekeeper", GatekeeperSpy::new);
+	}
 
 	@Override
-	public GatekeeperImp locateGatekeeper() {
-		locatorWasCalled = true;
-		return null;
+	public Gatekeeper locateGatekeeper() {
+		return (Gatekeeper) MCR.addCallAndReturnFromMRV();
 	}
 }

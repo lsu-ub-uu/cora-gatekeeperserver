@@ -20,6 +20,7 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private static final long VALID_UNTIL_NO_MILLIS = 600000L;
 	private static final long RENEW_UNTIL_NO_MILLIS = 86400000L;
 	private Map<String, ActiveTokenForUser> activeTokens = new ConcurrentHashMap<>();
+	private Map<String, ActiveUser> activeUsers = new ConcurrentHashMap<>();
 
 	// TODO: create getGuestUser method, instead of using getUseForToken(null)
 	@Override
@@ -86,7 +88,7 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private User getAuthenticatedUser(String token) {
 		ActiveTokenForUser authentication = activeTokens.get(token);
-		return authentication.user();
+		return activeUsers.get(authentication.loginId()).user;
 	}
 
 	@Override
@@ -108,24 +110,40 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private void removeActiveTokenIfNoLongerValid(Entry<String, ActiveTokenForUser> entry) {
 		if (!activeTokenForUserIsValid(entry.getValue())) {
+			ActiveTokenForUser activeToken = activeTokens.get(entry.getKey());
 			activeTokens.remove(entry.getKey());
+			ActiveUser activeUser = activeUsers.get(activeToken.loginId());
+			popActiveUser(activeToken.loginId(), activeUser);
 		}
 	}
 
 	private AuthToken tryToGetAuthTokenForUserInfo(UserInfo userInfo) {
 		String generatedToken = generateRandomUUID();
 		String generatedTokenId = generateRandomUUID();
-		ActiveTokenForUser activeToken = createActiveTokenForUser(generatedTokenId, userInfo);
+		User pickedUser = pickUser(userInfo);
+		ActiveTokenForUser activeToken = createActiveTokenForUser(generatedTokenId,
+				pickedUser.loginId);
 		activeTokens.put(generatedToken, activeToken);
-		return createAuthToken(generatedToken, activeToken);
+
+		addActiveUser(pickedUser);
+		return generateAuthToken(generatedToken, activeToken);
 	}
 
-	private ActiveTokenForUser createActiveTokenForUser(String tokenId, UserInfo userInfo) {
-		User pickedUser = pickUser(userInfo);
+	private void addActiveUser(User user) {
+		if (activeUsers.containsKey(user.loginId)) {
+			ActiveUser activeUser = activeUsers.get(user.loginId);
+			activeUser.increasCounter();
+		} else {
+			ActiveUser activeUser = new ActiveUser(user);
+			activeUsers.put(user.loginId, activeUser);
+		}
+	}
+
+	private ActiveTokenForUser createActiveTokenForUser(String tokenId, String userId) {
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
 		long renewUntil = currentTime + RENEW_UNTIL_NO_MILLIS;
-		return new ActiveTokenForUser(tokenId, pickedUser, validUntil, renewUntil);
+		return new ActiveTokenForUser(tokenId, userId, validUntil, renewUntil);
 	}
 
 	private User pickUser(UserInfo userInfo) {
@@ -133,8 +151,9 @@ public enum GatekeeperImp implements Gatekeeper {
 		return userPicker.pickUser(userInfo);
 	}
 
-	private AuthToken createAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
-		User user = activeTokenForUser.user();
+	private AuthToken generateAuthToken(String token, ActiveTokenForUser activeTokenForUser) {
+		String loginId = activeTokenForUser.loginId();
+		User user = activeUsers.get(loginId).user;
 		return new AuthToken(token, activeTokenForUser.tokenId(), activeTokenForUser.validUntil(),
 				activeTokenForUser.renewUntil(), user.id, user.loginId,
 				Optional.ofNullable(user.firstName), Optional.ofNullable(user.lastName),
@@ -159,7 +178,22 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	private void removeAuthTokenIfUserIdMatches(String tokenId, String token) {
 		ensureUserIdMatchesTokensUserId(tokenId, token);
+		removeActiveTokenAndUser(token);
+	}
+
+	private void removeActiveTokenAndUser(String token) {
+		ActiveTokenForUser activeToken = activeTokens.get(token);
 		activeTokens.remove(token);
+		ActiveUser activeUser = activeUsers.get(activeToken.loginId());
+		popActiveUser(activeToken.loginId(), activeUser);
+	}
+
+	private void popActiveUser(String loginIdFromToken, ActiveUser activeUser) {
+		if (activeUser.counter > 1) {
+			activeUser.decreaseCounter();
+		} else {
+			activeUsers.remove(loginIdFromToken);
+		}
 	}
 
 	private void ensureUserIdMatchesTokensUserId(String tokenId, String token) {
@@ -169,9 +203,10 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	void onlyForTestSetActiveTokenForUser(String token, ActiveTokenForUser activeTokenForUser) {
-		activeTokens.put(token, activeTokenForUser);
-
+	void onlyForTestSetActiveTokenAndActiveUsers(String token, ActiveTokenForUser activeToken,
+			User activeUser) {
+		activeTokens.put(token, activeToken);
+		addActiveUser(activeUser);
 	}
 
 	@Override
@@ -181,7 +216,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		ensureRenewUntilHasNotPassed(oldToken);
 		String newToken = generateRandomUUID();
 		ActiveTokenForUser newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
-		return createAuthToken(newToken, newAuthentication);
+		return generateAuthToken(newToken, newAuthentication);
 	}
 
 	private ActiveTokenForUser replaceOldToNewAuthentication(String token, String newToken) {
@@ -194,7 +229,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private ActiveTokenForUser renewAuthentication(ActiveTokenForUser activeTokenForUser) {
 		long currentTime = System.currentTimeMillis();
 		long validUntil = currentTime + VALID_UNTIL_NO_MILLIS;
-		return new ActiveTokenForUser(activeTokenForUser.tokenId(), activeTokenForUser.user(),
+		return new ActiveTokenForUser(activeTokenForUser.tokenId(), activeTokenForUser.loginId(),
 				validUntil, activeTokenForUser.renewUntil());
 	}
 
@@ -214,11 +249,106 @@ public enum GatekeeperImp implements Gatekeeper {
 		return currentTimestamp <= activeTokenForUser.renewUntil();
 	}
 
+	@Override
+	public void dataChanged(String type, String id, String action) {
+		// TODO: Vi behöver hantera fallet om loginId ändras i användare. Då behöver man byta
+		// loginId i alla activeTokens och i key för activeUsers (eller kan vi lösa problemet på ett
+		// annat sett)
+		if ("user".equals(type) && "update".equals(action)) {
+			updateRelatedUsersDataFromStorage(id);
+		}
+
+		if ("user".equals(type) && "delete".equals(action)) {
+			deleteRelatedUsersFromCache(id);
+		}
+	}
+
+	private void deleteRelatedUsersFromCache(String id) {
+		Iterator<ActiveUser> iterator = activeUsers.values().iterator();
+		while (iterator.hasNext()) {
+			possiblyDeleteUserFromCache(id, iterator.next(), iterator);
+		}
+	}
+
+	private void possiblyDeleteUserFromCache(String id, ActiveUser activeUser,
+			Iterator<ActiveUser> iterator) {
+		String activeUserId = activeUser.user.id;
+		if (activeUserId.equals(id)) {
+			deleteUserFromCache(activeUser, iterator);
+		}
+	}
+
+	private void deleteUserFromCache(ActiveUser activeUser, Iterator<ActiveUser> iterator) {
+		String activeUserLoginId = activeUser.user.loginId;
+		activeTokens.values()
+				.removeIf(activeToken -> activeToken.loginId().equals(activeUserLoginId));
+		iterator.remove();
+	}
+
+	private void updateRelatedUsersDataFromStorage(String id) {
+		Optional<ActiveUser> foundActiveUser = findActiveUserWithId(id);
+		if (foundActiveUser.isPresent()) {
+			handleUpdateForActiveUser(id, foundActiveUser.get());
+		}
+	}
+
+	private Optional<ActiveUser> findActiveUserWithId(String id) {
+		for (ActiveUser activeUser : activeUsers.values()) {
+			String activeUserId1 = activeUser.user.id;
+			if (activeUserId1.equals(id)) {
+				return Optional.of(activeUser);
+			}
+		}
+		return Optional.empty();
+	}
+
+	private void handleUpdateForActiveUser(String id, ActiveUser activeUser) {
+		User pickedUser = pickUserUsingId(id);
+		if (activeUserIdDifferentThanUserPickedFromStorage(id, pickedUser.id)) {
+			deleteRelatedUsersFromCache(id);
+		} else {
+			activeUser.user = pickedUser;
+		}
+	}
+
+	private boolean activeUserIdDifferentThanUserPickedFromStorage(String id, String idFromPickedUser) {
+		return !id.equals(idFromPickedUser);
+	}
+
+	private User pickUserUsingId(String id) {
+		UserPicker userPicker = UserPickerProvider.getUserPicker();
+		UserInfo userInfo = UserInfo.withIdInUserStorage(id);
+		return userPicker.pickUser(userInfo);
+	}
+
 	void onlyForTestEmptyAuthentications() {
 		activeTokens = new HashMap<>();
+		activeUsers = new HashMap<>();
 	}
 
 	Map<String, ActiveTokenForUser> onlyForTestGetActiveTokens() {
 		return activeTokens;
+	}
+
+	Map<String, ActiveUser> onlyForTestGetActiveUsers() {
+		return activeUsers;
+	}
+
+	class ActiveUser {
+		User user;
+		int counter;
+
+		public ActiveUser(User user) {
+			this.user = user;
+			this.counter = 1;
+		}
+
+		public void increasCounter() {
+			counter++;
+		}
+
+		public void decreaseCounter() {
+			counter--;
+		}
 	}
 }

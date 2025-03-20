@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2022, 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,31 +16,40 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.gatekeeperserver.initialize;
+package se.uu.ub.cora.gatekeeperserver.spies;
 
+import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.picker.UserPicker;
-import se.uu.ub.cora.gatekeeper.picker.UserPickerInstanceProvider;
-import se.uu.ub.cora.gatekeeperserver.spies.UserPickerSpy;
+import se.uu.ub.cora.gatekeeper.user.User;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class UserPickerInstanceProviderSpy implements UserPickerInstanceProvider {
+public class UserPickerSpy implements UserPicker {
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public UserPickerInstanceProviderSpy() {
+	public UserPickerSpy() {
 		MCR.useMRV(MRV);
-		MRV.setDefaultReturnValuesSupplier("getUserPicker", UserPickerSpy::new);
+		MRV.setDefaultReturnValuesSupplier("pickGuest", () -> createGenericUser("Guest"));
+		MRV.setDefaultReturnValuesSupplier("pickUser", () -> createGenericUser("SomeUser"));
+	}
+
+	private User createGenericUser(String name) {
+		User aUser = new User("some" + name + "UserId");
+		aUser.firstName = "some" + name + "FirstName";
+		aUser.lastName = "some" + name + "LastName";
+		aUser.loginId = "some" + name + "LoginId";
+		return aUser;
 	}
 
 	@Override
-	public int getOrderToSelectImplementionsBy() {
-		return 0;
+	public User pickGuest() {
+		return (User) MCR.addCallAndReturnFromMRV();
 	}
 
 	@Override
-	public UserPicker getUserPicker() {
-		return (UserPicker) MCR.addCallAndReturnFromMRV();
+	public User pickUser(UserInfo userInfo) {
+		return (User) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
 	}
 
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Olov McKie
+ * Copyright 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -26,12 +27,16 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
+import se.uu.ub.cora.gatekeeperserver.cache.DataChangeMessageReceiver;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocator;
 import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperLocatorImp;
 import se.uu.ub.cora.initialize.SettingsProvider;
 import se.uu.ub.cora.logger.Logger;
 import se.uu.ub.cora.logger.LoggerProvider;
+import se.uu.ub.cora.messaging.AmqpMessageListenerRoutingInfo;
+import se.uu.ub.cora.messaging.MessageRoutingInfo;
+import se.uu.ub.cora.messaging.MessagingProvider;
 
 @WebListener
 public class GatekeeperModuleInitializer implements ServletContextListener {
@@ -48,6 +53,7 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 		String simpleName = GatekeeperModuleInitializer.class.getSimpleName();
 		log.logInfoUsingMessage(simpleName + " starting...");
 		collectInitInformation();
+		startListenForDataChangesForUser();
 		startLocator();
 		makeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup();
 		log.logInfoUsingMessage(simpleName + " started");
@@ -70,6 +76,23 @@ public class GatekeeperModuleInitializer implements ServletContextListener {
 	private void startLocator() {
 		GatekeeperLocator locator = new GatekeeperLocatorImp();
 		GatekeeperInstanceProvider.setGatekeeperLocator(locator);
-		// GatekeeperImp.INSTANCE.setUserPickerProvider(userPickerProvider);
+	}
+
+	private void startListenForDataChangesForUser() {
+		MessageRoutingInfo routingInfo = createRoutingInfo();
+		var listener = MessagingProvider.getTopicMessageListener(routingInfo);
+
+		listener.listen(new DataChangeMessageReceiver());
+	}
+
+	private MessageRoutingInfo createRoutingInfo() {
+		String hostname = SettingsProvider.getSetting("rabbitMqHostname");
+		int port = Integer.parseInt(SettingsProvider.getSetting("rabbitMqPort"));
+		String virtualHost = SettingsProvider.getSetting("rabbitMqVirtualHost");
+		String exchange = SettingsProvider.getSetting("rabbitMqDataExchange");
+		String routingKey = "user";
+
+		return new AmqpMessageListenerRoutingInfo(hostname, port, virtualHost, exchange,
+				routingKey);
 	}
 }

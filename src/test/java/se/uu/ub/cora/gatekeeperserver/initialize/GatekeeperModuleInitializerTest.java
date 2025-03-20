@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Olov McKie
+ * Copyright 2025 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -19,17 +20,24 @@
 package se.uu.ub.cora.gatekeeperserver.initialize;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import se.uu.ub.cora.gatekeeper.picker.UserPickerProvider;
+import se.uu.ub.cora.gatekeeperserver.cache.DataChangeMessageReceiver;
+import se.uu.ub.cora.gatekeeperserver.cache.spies.MessageListenerSpy;
+import se.uu.ub.cora.gatekeeperserver.cache.spies.MessagingFactorySpy;
 import se.uu.ub.cora.initialize.SettingsProvider;
 import se.uu.ub.cora.logger.LoggerProvider;
 import se.uu.ub.cora.logger.spies.LoggerFactorySpy;
 import se.uu.ub.cora.logger.spies.LoggerSpy;
+import se.uu.ub.cora.messaging.AmqpMessageListenerRoutingInfo;
+import se.uu.ub.cora.messaging.MessagingProvider;
 
 public class GatekeeperModuleInitializerTest {
 	private LoggerFactorySpy loggerFactorySpy;
@@ -38,10 +46,15 @@ public class GatekeeperModuleInitializerTest {
 	private GatekeeperModuleInitializer gatekeeperInitializer;
 	private UserPickerInstanceProviderSpy userPickerInstanceProviderSpy;
 
+	private MessagingFactorySpy messagingFactory;
+
 	@BeforeMethod
 	public void beforeMethod() {
 		loggerFactorySpy = new LoggerFactorySpy();
 		LoggerProvider.setLoggerFactory(loggerFactorySpy);
+		messagingFactory = new MessagingFactorySpy();
+		MessagingProvider.setMessagingFactory(messagingFactory);
+
 		userPickerInstanceProviderSpy = new UserPickerInstanceProviderSpy();
 		UserPickerProvider.onlyForTestSetUserPickerInstanceProvider(userPickerInstanceProviderSpy);
 		source = new ServletContextSpy();
@@ -50,14 +63,24 @@ public class GatekeeperModuleInitializerTest {
 		gatekeeperInitializer = new GatekeeperModuleInitializer();
 	}
 
+	@AfterMethod
+	private void afterMethod() {
+		SettingsProvider.setSettings(null);
+		LoggerProvider.setLoggerFactory(null);
+		MessagingProvider.setMessagingFactory(null);
+	}
+
 	private void setNeededInitParameters() {
 		source.setInitParameter("initParam1", "initValue1");
 		source.setInitParameter("initParam2", "initValue2");
-
+		source.setInitParameter("rabbitMqHostname", "someHostname");
+		source.setInitParameter("rabbitMqPort", "6666");
+		source.setInitParameter("rabbitMqVirtualHost", "someVirtualHost");
+		source.setInitParameter("rabbitMqDataExchange", "someExchange");
 	}
 
 	@Test
-	public void testLogMessagesOnStartup() throws Exception {
+	public void testLogMessagesOnStartup() {
 		gatekeeperInitializer.contextInitialized(context);
 
 		loggerFactorySpy.MCR.assertParameters("factorForClass", 0,
@@ -70,8 +93,7 @@ public class GatekeeperModuleInitializerTest {
 	}
 
 	@Test
-	public void testMakeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup()
-			throws Exception {
+	public void testMakeCallToKnownNeededProvidersToMakeSureTheyStartCorrectlyAtSystemStartup() {
 		gatekeeperInitializer.contextInitialized(context);
 
 		userPickerInstanceProviderSpy.MCR.assertMethodWasCalled("getUserPicker");
@@ -83,5 +105,39 @@ public class GatekeeperModuleInitializerTest {
 
 		assertEquals(SettingsProvider.getSetting("initParam1"), "initValue1");
 		assertEquals(SettingsProvider.getSetting("initParam2"), "initValue2");
+	}
+
+	@Test
+	public void testStartListening() {
+		gatekeeperInitializer.contextInitialized(context);
+
+		messagingFactory.MCR.assertMethodWasCalled("factorTopicMessageListener");
+		assertRoutingInfo();
+		var listener = assertListenerAndReturn();
+		assertMessageReceiver(listener);
+	}
+
+	private void assertRoutingInfo() {
+		var routingInfo = (AmqpMessageListenerRoutingInfo) messagingFactory.MCR
+				.getParameterForMethodAndCallNumberAndParameter("factorTopicMessageListener", 0,
+						"messagingRoutingInfo");
+		assertEquals(routingInfo.hostname, "someHostname");
+		assertEquals(routingInfo.port, 6666);
+		assertEquals(routingInfo.virtualHost, "someVirtualHost");
+		assertEquals(routingInfo.exchange, "someExchange");
+		assertEquals(routingInfo.routingKey, "user");
+	}
+
+	private MessageListenerSpy assertListenerAndReturn() {
+		var listener = (MessageListenerSpy) messagingFactory.MCR
+				.getReturnValue("factorTopicMessageListener", 0);
+		listener.MCR.assertMethodWasCalled("listen");
+		return listener;
+	}
+
+	private void assertMessageReceiver(MessageListenerSpy listener) {
+		var messageReceiver = listener.MCR.getParameterForMethodAndCallNumberAndParameter("listen",
+				0, "messageReceiver");
+		assertTrue(messageReceiver instanceof DataChangeMessageReceiver);
 	}
 }

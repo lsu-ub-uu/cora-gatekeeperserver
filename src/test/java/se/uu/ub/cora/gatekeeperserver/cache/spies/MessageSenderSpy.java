@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Uppsala University Library
+ * Copyright 2023 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,39 +16,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.gatekeeperserver.initialize;
+package se.uu.ub.cora.gatekeeperserver.cache.spies;
 
-import java.util.function.Supplier;
+import java.util.Map;
 
-import se.uu.ub.cora.gatekeeper.picker.UserInfo;
-import se.uu.ub.cora.gatekeeper.picker.UserPicker;
-import se.uu.ub.cora.gatekeeper.user.User;
+import se.uu.ub.cora.messaging.MessageSender;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 import se.uu.ub.cora.testutils.mrv.MethodReturnValues;
 
-public class UserPickerSpy implements UserPicker {
+public class MessageSenderSpy implements MessageSender {
+
 	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public MethodReturnValues MRV = new MethodReturnValues();
 
-	public UserPickerSpy() {
+	public MessageSenderSpy() {
 		MCR.useMRV(MRV);
-		User guest = new User("guest");
-		MRV.setDefaultReturnValuesSupplier("pickGuest", (Supplier<User>) () -> guest);
-		User user = new User("user");
-		user.loginId = "loginId";
-		user.firstName = "firstName";
-		user.lastName = "lastName";
-		MRV.setDefaultReturnValuesSupplier("pickUser", (Supplier<User>) () -> user);
 	}
 
 	@Override
-	public User pickGuest() {
-		return (User) MCR.addCallAndReturnFromMRV();
-	}
-
-	@Override
-	public User pickUser(UserInfo userInfo) {
-		return (User) MCR.addCallAndReturnFromMRV("userInfo", userInfo);
+	public void sendMessage(Map<String, Object> headers, String message) {
+		MCR.addCall("headers", headers, "message", message);
 	}
 
 }
