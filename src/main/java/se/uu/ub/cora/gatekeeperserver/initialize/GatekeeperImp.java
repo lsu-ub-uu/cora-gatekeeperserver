@@ -103,15 +103,16 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	void removeNoLongerValidActiveToken() {
-		for (Entry<String, ActiveTokenForUser> entry : activeTokens.entrySet()) {
-			removeActiveTokenIfNoLongerValid(entry);
+		for (Entry<String, ActiveTokenForUser> activeTokenEntry : activeTokens.entrySet()) {
+			removeActiveTokenIfNoLongerValid(activeTokenEntry);
 		}
 	}
 
-	private void removeActiveTokenIfNoLongerValid(Entry<String, ActiveTokenForUser> entry) {
-		if (!activeTokenForUserIsValid(entry.getValue())) {
-			ActiveTokenForUser activeToken = activeTokens.get(entry.getKey());
-			activeTokens.remove(entry.getKey());
+	private void removeActiveTokenIfNoLongerValid(
+			Entry<String, ActiveTokenForUser> activeTokenEntry) {
+		if (!activeTokenForUserIsValid(activeTokenEntry.getValue())) {
+			ActiveTokenForUser activeToken = activeTokens.get(activeTokenEntry.getKey());
+			activeTokens.remove(activeTokenEntry.getKey());
 			ActiveUser activeUser = activeUsers.get(activeToken.loginId());
 			popActiveUser(activeToken.loginId(), activeUser);
 		}
@@ -132,7 +133,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	private void addActiveUser(User user) {
 		if (activeUsers.containsKey(user.loginId)) {
 			ActiveUser activeUser = activeUsers.get(user.loginId);
-			activeUser.increasCounter();
+			activeUser.increaseCounter();
 		} else {
 			ActiveUser activeUser = new ActiveUser(user);
 			activeUsers.put(user.loginId, activeUser);
@@ -189,6 +190,7 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private void popActiveUser(String loginIdFromToken, ActiveUser activeUser) {
+
 		if (activeUser.counter > 1) {
 			activeUser.decreaseCounter();
 		} else {
@@ -216,6 +218,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		ensureRenewUntilHasNotPassed(oldToken);
 		String newToken = generateRandomUUID();
 		ActiveTokenForUser newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
+		activeUsers.get(newAuthentication.loginId()).increaseCounter();
 		return generateAuthToken(newToken, newAuthentication);
 	}
 
@@ -311,7 +314,8 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	private boolean activeUserIdDifferentThanUserPickedFromStorage(String id, String idFromPickedUser) {
+	private boolean activeUserIdDifferentThanUserPickedFromStorage(String id,
+			String idFromPickedUser) {
 		return !id.equals(idFromPickedUser);
 	}
 
@@ -343,7 +347,7 @@ public enum GatekeeperImp implements Gatekeeper {
 			this.counter = 1;
 		}
 
-		public void increasCounter() {
+		public void increaseCounter() {
 			counter++;
 		}
 

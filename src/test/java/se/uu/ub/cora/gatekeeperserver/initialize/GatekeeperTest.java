@@ -270,6 +270,52 @@ public class GatekeeperTest {
 
 	}
 
+	@Test(enabled = false)
+	public void testReproduceFailOnAuthTokenRenew() {
+		userPickerSpy.MRV.setDefaultReturnValuesSupplier("pickUser", () -> userElly);
+
+		UserInfo userInfoElly = UserInfo.withLoginId(userElly.loginId);
+		int i = 2000;
+		while (i > 0) {
+			AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
+			AuthToken authToken2 = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
+			AuthToken authToken3 = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
+			printActiveUsers();
+			printActiveTokens();
+
+			try {
+				gatekeeper.renewAuthToken(authToken.tokenId(), authToken.token());
+				System.out.println("Renew tokenId:" + authToken.tokenId() + "");
+			} catch (Exception e) {
+				System.out.println("Nothing to Renew");
+			}
+
+			System.out.println();
+
+			i--;
+		}
+	}
+
+	private void printActiveUsers() {
+		System.out.println("ActiveUsers (" + gatekeeper.onlyForTestGetActiveUsers().size() + ")");
+		for (ActiveUser activeUser : gatekeeper.onlyForTestGetActiveUsers().values()) {
+			System.out.println(activeUser.user.loginId + ", " + activeUser.counter);
+		}
+	}
+
+	private void printActiveTokens() {
+		System.out.println("ActiveTokens (" + gatekeeper.onlyForTestGetActiveTokens().size() + ")");
+		for (ActiveTokenForUser activeToken : gatekeeper.onlyForTestGetActiveTokens().values()) {
+			System.out.println(
+					activeToken.loginId() + " is valid? " + activeTokenForUserIsValid(activeToken));
+		}
+	}
+
+	private boolean activeTokenForUserIsValid(ActiveTokenForUser activeTokenForUser) {
+		long currentTimestamp = System.currentTimeMillis();
+		return currentTimestamp <= activeTokenForUser.validUntil();
+	}
+
 	@Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = ""
 			+ "Token not valid")
 	public void testgetUserForTokenNotValid() {
@@ -376,6 +422,9 @@ public class GatekeeperTest {
 		assertEquals(newAuthToken.loginId(), userElly.loginId);
 		assertEquals(newAuthToken.firstName().get(), userElly.firstName);
 		assertEquals(newAuthToken.lastName().get(), userElly.lastName);
+		ActiveUser activeUser = gatekeeper.onlyForTestGetActiveUsers().get(newAuthToken.loginId());
+		assertEquals(activeUser.counter, 2);
+
 	}
 
 	@Test
@@ -539,12 +588,6 @@ public class GatekeeperTest {
 		gatekeeper.dataChanged(USER_RECORD_TYPE, userElly.id, "delete");
 		assertEquals(gatekeeper.onlyForTestGetActiveTokens().size(), 0);
 		assertEquals(gatekeeper.onlyForTestGetActiveUsers().size(), 0);
-	}
-
-	private void printActiveUsers() {
-		for (ActiveUser activeUser : gatekeeper.onlyForTestGetActiveUsers().values()) {
-			System.out.println(activeUser.user.loginId + ", " + activeUser.counter);
-		}
 	}
 
 	private void assertActiveUserAndTokenHaveBeenRemovedFromGatekeeper(AuthenticationException e) {
