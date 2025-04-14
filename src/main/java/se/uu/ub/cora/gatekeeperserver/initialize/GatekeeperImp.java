@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import se.uu.ub.cora.gatekeeper.picker.UserInfo;
 import se.uu.ub.cora.gatekeeper.picker.UserPicker;
@@ -114,7 +115,7 @@ public enum GatekeeperImp implements Gatekeeper {
 			ActiveTokenForUser activeToken = activeTokens.get(activeTokenEntry.getKey());
 			activeTokens.remove(activeTokenEntry.getKey());
 			ActiveUser activeUser = activeUsers.get(activeToken.loginId());
-			popActiveUser(activeToken.loginId(), activeUser);
+			removeActiveUser(activeToken.loginId(), activeUser);
 		}
 	}
 
@@ -131,13 +132,13 @@ public enum GatekeeperImp implements Gatekeeper {
 	}
 
 	private void addActiveUser(User user) {
-		if (activeUsers.containsKey(user.loginId)) {
-			ActiveUser activeUser = activeUsers.get(user.loginId);
-			activeUser.increaseCounter();
-		} else {
-			ActiveUser activeUser = new ActiveUser(user);
-			activeUsers.put(user.loginId, activeUser);
-		}
+		activeUsers.compute(user.loginId, (_, existingUser) -> {
+			if (existingUser != null) {
+				existingUser.incrementAnGet();
+				return existingUser;
+			}
+			return new ActiveUser(user);
+		});
 	}
 
 	private ActiveTokenForUser createActiveTokenForUser(String tokenId, String userId) {
@@ -186,13 +187,13 @@ public enum GatekeeperImp implements Gatekeeper {
 		ActiveTokenForUser activeToken = activeTokens.get(token);
 		activeTokens.remove(token);
 		ActiveUser activeUser = activeUsers.get(activeToken.loginId());
-		popActiveUser(activeToken.loginId(), activeUser);
+		removeActiveUser(activeToken.loginId(), activeUser);
 	}
 
-	private void popActiveUser(String loginIdFromToken, ActiveUser activeUser) {
+	private void removeActiveUser(String loginIdFromToken, ActiveUser activeUser) {
 
-		if (activeUser.counter > 1) {
-			activeUser.decreaseCounter();
+		if (activeUser.counter.get() > 1) {
+			activeUser.decrementAndGet();
 		} else {
 			activeUsers.remove(loginIdFromToken);
 		}
@@ -218,7 +219,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		ensureRenewUntilHasNotPassed(oldToken);
 		String newToken = generateRandomUUID();
 		ActiveTokenForUser newAuthentication = replaceOldToNewAuthentication(oldToken, newToken);
-		activeUsers.get(newAuthentication.loginId()).increaseCounter();
+		activeUsers.get(newAuthentication.loginId()).incrementAnGet();
 		return generateAuthToken(newToken, newAuthentication);
 	}
 
@@ -340,19 +341,23 @@ public enum GatekeeperImp implements Gatekeeper {
 
 	class ActiveUser {
 		User user;
-		int counter;
+		private AtomicInteger counter;
 
 		public ActiveUser(User user) {
 			this.user = user;
-			this.counter = 1;
+			this.counter = new AtomicInteger(1);
 		}
 
-		public void increaseCounter() {
-			counter++;
+		public int incrementAnGet() {
+			return counter.incrementAndGet();
 		}
 
-		public void decreaseCounter() {
-			counter--;
+		public int decrementAndGet() {
+			return counter.decrementAndGet();
+		}
+
+		public int getNumberActiveTokens() {
+			return counter.get();
 		}
 	}
 }

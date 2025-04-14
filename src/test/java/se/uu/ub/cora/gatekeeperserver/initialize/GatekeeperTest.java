@@ -278,8 +278,6 @@ public class GatekeeperTest {
 		int i = 2000;
 		while (i > 0) {
 			AuthToken authToken = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
-			AuthToken authToken2 = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
-			AuthToken authToken3 = gatekeeper.getAuthTokenForUserInfo(userInfoElly);
 			printActiveUsers();
 			printActiveTokens();
 
@@ -299,7 +297,7 @@ public class GatekeeperTest {
 	private void printActiveUsers() {
 		System.out.println("ActiveUsers (" + gatekeeper.onlyForTestGetActiveUsers().size() + ")");
 		for (ActiveUser activeUser : gatekeeper.onlyForTestGetActiveUsers().values()) {
-			System.out.println(activeUser.user.loginId + ", " + activeUser.counter);
+			System.out.println(activeUser.user.loginId + ", " + activeUser.getNumberActiveTokens());
 		}
 	}
 
@@ -423,7 +421,7 @@ public class GatekeeperTest {
 		assertEquals(newAuthToken.firstName().get(), userElly.firstName);
 		assertEquals(newAuthToken.lastName().get(), userElly.lastName);
 		ActiveUser activeUser = gatekeeper.onlyForTestGetActiveUsers().get(newAuthToken.loginId());
-		assertEquals(activeUser.counter, 2);
+		assertEquals(activeUser.getNumberActiveTokens(), 2);
 
 	}
 
