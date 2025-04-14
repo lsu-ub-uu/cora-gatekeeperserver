@@ -103,7 +103,7 @@ public enum GatekeeperImp implements Gatekeeper {
 		}
 	}
 
-	void removeNoLongerValidActiveToken() {
+	synchronized void removeNoLongerValidActiveToken() {
 		for (Entry<String, ActiveTokenForUser> activeTokenEntry : activeTokens.entrySet()) {
 			removeActiveTokenIfNoLongerValid(activeTokenEntry);
 		}
