@@ -35,8 +35,8 @@ import se.uu.ub.cora.gatekeeperserver.dependency.GatekeeperInstanceProvider;
 public final class TokenProviderEndpoint {
 
 	@POST
-	@Consumes("application/vnd.uub.userInfo+json")
-	@Produces("application/vnd.uub.authToken+json")
+	@Consumes("application/vnd.cora.userInfo+json")
+	@Produces("application/vnd.cora.authToken+json")
 	public Response getAuthTokenForUserInfo(String jsonUserInfo) {
 		try {
 			return tryToGetAuthTokenForUserInfo(jsonUserInfo);
@@ -66,7 +66,7 @@ public final class TokenProviderEndpoint {
 	@POST
 	@Path("{tokenId}")
 	@Consumes("text/plain")
-	@Produces("application/vnd.uub.authToken+json")
+	@Produces("application/vnd.cora.authToken+json")
 	public Response renewAuthToken(@PathParam("tokenId") String tokenId, String token) {
 		try {
 			return tryToRenewAuthToken(tokenId, token);

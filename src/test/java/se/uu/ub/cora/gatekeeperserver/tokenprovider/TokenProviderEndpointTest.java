@@ -75,8 +75,8 @@ public class TokenProviderEndpointTest {
 						TokenProviderEndpoint.class, "getAuthTokenForUserInfo", 1);
 
 		annotationHelper.assertHttpMethodAnnotation("POST");
-		annotationHelper.assertConsumesAnnotation("application/vnd.uub.userInfo+json");
-		annotationHelper.assertProducesAnnotation("application/vnd.uub.authToken+json");
+		annotationHelper.assertConsumesAnnotation("application/vnd.cora.userInfo+json");
+		annotationHelper.assertProducesAnnotation("application/vnd.cora.authToken+json");
 	}
 
 	@Test
@@ -149,7 +149,7 @@ public class TokenProviderEndpointTest {
 		annotationHelper.assertHttpMethodAndPathAnnotation("POST", "{tokenId}");
 		annotationHelper.assertPathParamAnnotationByNameAndPosition("tokenId", 0);
 		annotationHelper.assertConsumesAnnotation("text/plain");
-		annotationHelper.assertProducesAnnotation("application/vnd.uub.authToken+json");
+		annotationHelper.assertProducesAnnotation("application/vnd.cora.authToken+json");
 	}
 
 	@Test
